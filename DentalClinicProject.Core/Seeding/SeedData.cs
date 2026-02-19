@@ -171,21 +171,28 @@
         public const string Product1Name = "Electric Toothbrush";
         public const string Product1Description = "Advanced electric toothbrush with 3 cleaning modes";
         public const decimal Product1Price = 350m;
+        public static readonly DateTime Product1Date = new(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
 
         public const int Product2Id = 2;
         public const string Product2Name = "Medical Toothpaste";
         public const string Product2Description = "Medical toothpaste for sensitive teeth";
         public const decimal Product2Price = 80m;
+        public static readonly DateTime Product2Date = new(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
+
 
         public const int Product3Id = 3;
         public const string Product3Name = "Dental Floss";
         public const string Product3Description = "Mint flavored dental floss";
         public const decimal Product3Price = 45m;
+        public static readonly DateTime Product3Date = new(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
+
 
         public const int Product4Id = 4;
         public const string Product4Name = "Mouthwash";
         public const string Product4Description = "Antibacterial mouthwash";
         public const decimal Product4Price = 120m;
+        public static readonly DateTime Product4Date = new(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
+
 
         // ========================
         // Appointments Data

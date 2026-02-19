@@ -4,6 +4,7 @@ using DentalClinicProject.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260218083012_AddSeedData")]
+    partial class AddSeedData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,26 +37,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<DateOnly>("CreatedAt")
                         .HasColumnType("date");
 
-                    b.Property<string>("CreatedByIp")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ReplacedByToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RevokedByIp")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
                         .IsRequired()
@@ -159,9 +147,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("TransactionId")
                         .IsRequired()
@@ -185,7 +172,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PaymentDate = new DateTime(2024, 1, 15, 10, 30, 0, 0, DateTimeKind.Utc),
                             PaymentMethod = "Credit Card",
                             ProductId = 1,
-                            Status = "Paid",
+                            Status = 2,
                             TransactionId = "TXN-2024-001-ELECTRIC-BRUSH"
                         },
                         new
@@ -198,7 +185,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PaymentDate = new DateTime(2024, 1, 20, 14, 15, 0, 0, DateTimeKind.Utc),
                             PaymentMethod = "Cash",
                             ProductId = 2,
-                            Status = "Refunded",
+                            Status = 5,
                             TransactionId = "TXN-2024-002-TOOTHPASTE"
                         });
                 });
@@ -475,9 +462,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Provider")
+                        .HasColumnType("int");
 
                     b.Property<string>("ProviderId")
                         .IsRequired()
@@ -520,7 +506,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             NormalizedUserName = "ADMIN@DENTALCLINIC.COM",
                             PasswordHash = "$2a$12$PIsynfBEoxgQeX.9b1NhK.42bvqcU4z0m6RdOJK1SobWfVPSsx1EO",
                             PhoneNumberConfirmed = false,
-                            Provider = "Local",
+                            Provider = 0,
                             ProviderId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                             SecurityStamp = "ADMIN-SECURITY-STAMP-001",
                             TwoFactorEnabled = false,
@@ -540,7 +526,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             NormalizedUserName = "DOCTOR1@DENTALCLINIC.COM",
                             PasswordHash = "$2a$12$ItcpdkqaPFmWpAG6LVkGKu8qUspXV7sz4phOKrdAPQtcVN/hPb.tK",
                             PhoneNumberConfirmed = false,
-                            Provider = "Local",
+                            Provider = 0,
                             ProviderId = "b2c3d4e5-f6a7-8901-bcde-f12345678901",
                             SecurityStamp = "DOCTOR1-SECURITY-STAMP-001",
                             TwoFactorEnabled = false,
@@ -560,7 +546,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             NormalizedUserName = "DOCTOR2@DENTALCLINIC.COM",
                             PasswordHash = "$2a$12$ItcpdkqaPFmWpAG6LVkGKu8qUspXV7sz4phOKrdAPQtcVN/hPb.tK",
                             PhoneNumberConfirmed = false,
-                            Provider = "Local",
+                            Provider = 0,
                             ProviderId = "c3d4e5f6-a7b8-9012-cdef-123456789012",
                             SecurityStamp = "DOCTOR2-SECURITY-STAMP-001",
                             TwoFactorEnabled = false,
@@ -580,7 +566,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             NormalizedUserName = "PATIENT1@EXAMPLE.COM",
                             PasswordHash = "$2a$12$zFq7IDP.u8zUtqmlrBD55upoDjQFjAn9iPdRNfK95t0rg1fpIwh6S",
                             PhoneNumberConfirmed = false,
-                            Provider = "Local",
+                            Provider = 0,
                             ProviderId = "d4e5f6a7-b8c9-0123-def1-234567890123",
                             SecurityStamp = "PATIENT1-SECURITY-STAMP-001",
                             TwoFactorEnabled = false,
@@ -600,7 +586,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             NormalizedUserName = "PATIENT2@EXAMPLE.COM",
                             PasswordHash = "$2a$12$zFq7IDP.u8zUtqmlrBD55upoDjQFjAn9iPdRNfK95t0rg1fpIwh6S",
                             PhoneNumberConfirmed = false,
-                            Provider = "Local",
+                            Provider = 0,
                             ProviderId = "e5f6a7b8-c9d0-1234-ef12-345678901234",
                             SecurityStamp = "PATIENT2-SECURITY-STAMP-001",
                             TwoFactorEnabled = false,
@@ -620,7 +606,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             NormalizedUserName = "USER@EXAMPLE.COM",
                             PasswordHash = "$2a$12$vymAZaoE/iWWVCwN1Cp3DueGCpKrkt3QtrXosVVylxPFSJ31p7a7S",
                             PhoneNumberConfirmed = false,
-                            Provider = "Local",
+                            Provider = 0,
                             ProviderId = "f6a7b8c9-d0e1-2345-f123-456789012345",
                             SecurityStamp = "USER-SECURITY-STAMP-001",
                             TwoFactorEnabled = false,
