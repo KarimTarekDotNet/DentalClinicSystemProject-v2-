@@ -20,15 +20,28 @@ namespace DentalClinicProject.API
             {
                 op.AddProfile<UserMapping>();
             });
+
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddCors(op =>
+            {
+                op.AddPolicy("Cors", policy =>
+                {
+                    policy.AllowAnyHeader()
+                          .AllowAnyOrigin()
+                          .AllowAnyMethod();
+                });
+            });
 
+            // Authentication
             var key = Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]!);
+
             builder.Services.AddAuthentication(op =>
             {
                 op.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 op.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(op =>
+            })
+            .AddJwtBearer(op =>
             {
                 op.RequireHttpsMetadata = false;
                 op.SaveToken = false;
@@ -47,7 +60,7 @@ namespace DentalClinicProject.API
             });
 
             var app = builder.Build();
-            // Configure the HTTP request pipeline.
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -56,10 +69,12 @@ namespace DentalClinicProject.API
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseCors("Cors");
 
             app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 

@@ -4,13 +4,50 @@ using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Core.ViewModels;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Services;
+using MailKit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace DentalClinicProject.Infrastructure.Utilities
 {
     public static class Helper
     {
+        public static string GenerateVerificationCode(int length = 6)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var result = new char[length];
+
+            using var rng = RandomNumberGenerator.Create();
+            var randomBytes = new byte[length];
+            rng.GetBytes(randomBytes);
+
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = chars[randomBytes[i] % chars.Length];
+            }
+
+            return new string(result);
+        }
+
+        public static async Task SendVerificationEmailAsync(string email, IRedisService redisService, Core.Interfaces.IServices.IMailService mailService,
+            ILogger<AuthService> logger)
+        {
+            try
+            {
+                var code = GenerateVerificationCode();
+                string key = $"{email}:Code:{code}";
+                await redisService.SetAsync(key, code, TimeSpan.FromMinutes(15));
+                await mailService.SendVerificationCodeEmail(email, code);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send verification email to {Email}", email);
+                throw;
+            }
+        }
+
         public static AuthResult Fail(string message) => new AuthResult { Succeeded = false, Message = message };
         public static async Task<bool> CheckExists(string email, string username, UserManager<AppUser> userManager)
         {

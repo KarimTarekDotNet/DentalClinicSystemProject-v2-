@@ -9,5 +9,6 @@ namespace DentalClinicProject.Core.Interfaces.IServices
         Task<AuthResult> Login(LoginDTO loginDTO);
         Task<bool> LogoutAsync(string userId, string accessToken);
         Task<bool> LogoutAllAsync(string userId, string accessToken);
+        Task<ApiResponse<AuthResult>> VerifyEmail(string email, string code);
     }
 }

@@ -1,8 +1,10 @@
 ﻿using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IRepository;
+using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Core.Validator;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Repository;
+using DentalClinicProject.Infrastructure.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +41,7 @@ namespace DentalClinicProject.Infrastructure
             .AddDefaultTokenProviders();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddSingleton<IMailService, MailService>();
 
             return services;
         }

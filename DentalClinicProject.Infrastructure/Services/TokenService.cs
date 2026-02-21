@@ -82,7 +82,7 @@ namespace DentalClinicProject.Infrastructure.Services
         public async Task RevokeAllUserTokensAsync(string userId, string? ipAddress = null, string? replacedByToken = null)
         {
             var tokens = await context.RefreshTokens
-                .Where(r => r.UserId == userId && r.IsActive)
+                .Where(r => r.UserId == userId && !r.IsRevoked)
                 .ToListAsync();
 
             foreach (var token in tokens)
