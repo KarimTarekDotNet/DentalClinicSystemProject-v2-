@@ -1,8 +1,12 @@
 using DentalClinicProject.API.Mapping;
+using DentalClinicProject.API.Middleware;
 using DentalClinicProject.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 
 namespace DentalClinicProject.API
 {
@@ -58,8 +62,50 @@ namespace DentalClinicProject.API
                     ClockSkew = TimeSpan.Zero
                 };
             });
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+            });
+
+            builder.Services.AddRateLimiter(option =>
+            {
+                option.AddConcurrencyLimiter("ConcurrencyLimiter", opt =>
+                {
+                    opt.PermitLimit = 30;
+                    opt.QueueLimit = 5;
+                    opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                }).AddPolicy("PerIpSliding", context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString();
+
+                    return RateLimitPartition.GetSlidingWindowLimiter(ip ?? "Unknown", _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 25,
+                        Window = TimeSpan.FromSeconds(10),
+                        SegmentsPerWindow = 10,
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        AutoReplenishment = true
+                    });
+                }).AddPolicy("AuthLimiter", context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString();
+
+                    return RateLimitPartition.GetSlidingWindowLimiter(ip ?? "Unknown", _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 5,
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+                });
+            });
 
             var app = builder.Build();
+            app.UseForwardedHeaders();
 
             if (app.Environment.IsDevelopment())
             {
@@ -67,16 +113,16 @@ namespace DentalClinicProject.API
                 app.UseSwaggerUI();
                 app.MapOpenApi();
             }
-
+            app.UseMiddleware<GlobalMiddlewareException>();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
             app.UseCors("Cors");
 
             app.UseAuthentication();
+            app.UseRateLimiter();
             app.UseAuthorization();
-
-            app.MapControllers();
+            app.MapControllers().RequireRateLimiting("PerIpSliding");
 
             app.Run();
         }
