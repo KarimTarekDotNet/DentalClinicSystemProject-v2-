@@ -4,8 +4,11 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
 {
     public interface IUnitOfWork
     {
-        public ITokenService TokenService { get; }
-        public IRedisService RedisService { get; }
-        public IAuthService AuthService { get; }
+        // Services
+        ITokenService TokenService { get; }
+        IRedisService RedisService { get; }
+        IAuthService AuthService { get; }
+        IEmailVerificationService EmailVerificationService { get; }
+        IPhoneVerificationService PhoneVerificationService { get; }
     }
 }

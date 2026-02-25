@@ -9,143 +9,155 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
-namespace DentalClinicProject.Infrastructure.Services
+public class AuthService : IAuthService
 {
-    public class AuthService : IAuthService
+    private readonly IMailService _mailService;
+    private readonly IPhoneService _phoneService;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly SignInManager<AppUser> _signInManager;
+    private readonly IMapper _mapper;
+    private readonly ITokenService _tokenService;
+    private readonly IRedisService _redisService;
+    private readonly ApplicationDbContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<AuthService> _logger;
+
+    public AuthService(UserManager<AppUser> userManager,SignInManager<AppUser> signInManager,
+        IMapper mapper,ITokenService tokenService, ApplicationDbContext context,
+        IRedisService redisService, IHttpContextAccessor httpContextAccessor, ILogger<AuthService> logger,
+        IMailService mailService, IPhoneService phoneService)
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IMailService mailService;
-        private readonly ILogger<AuthService> logger;
-        private readonly UserManager<AppUser> userManager;
-        private readonly ApplicationDbContext context;
-        private readonly ITokenService tokenService;
-        private readonly IRedisService redisService;
-        private readonly IMapper mapper;
-        public AuthService(UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, ApplicationDbContext context,
-            IRedisService redisService, IMailService mailService, ILogger<AuthService> logger, IHttpContextAccessor httpContextAccessor)
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _mapper = mapper;
+        _tokenService = tokenService;
+        _context = context;
+        _redisService = redisService;
+        _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+        _mailService = mailService;
+        _phoneService = phoneService;
+    }
+
+    public async Task<ApiResponse<AuthResult>> Register(RegisterDTO dto)
+    {
+        try
         {
-            this.userManager = userManager;
-            this.mapper = mapper;
-            this.tokenService = tokenService;
-            this.context = context;
-            this.redisService = redisService;
-            this.mailService = mailService;
-            this.logger = logger;
-            this.httpContextAccessor = httpContextAccessor;
-        }
+            _logger.LogInformation("Registration attempt for email: {Email}, username: {Username}", dto.Email, dto.UserName);
 
-        public async Task<ApiResponse<AuthResult>> Register(RegisterDTO registerDTO)
-        {
-            var user = mapper.Map<AppUser>(registerDTO);
-
-            using var transaction = await context.Database.BeginTransactionAsync();
-            try
+            // Validation checks
+            if (dto == null)
             {
-                var checkEmailAndUsername =
-                    await Helper.CheckExists(registerDTO.Email, registerDTO.UserName, userManager);
-
-                if (!checkEmailAndUsername)
-                {
-                    return new ApiResponse<AuthResult>
-                    {
-                        Success = false,
-                        StatusCode = 400,
-                        Message = "Email or username already exists"
-                    };
-                }
-
-                var addUser = await Helper.AddUserAsync(
-                    userManager,
-                    user,
-                    registerDTO.Password,
-                    registerDTO.Role.ToString(),
-                    context
-                );
-
-                if (!addUser.Succeeded)
-                {
-                    return new ApiResponse<AuthResult>
-                    {
-                        Success = false,
-                        StatusCode = 400,
-                        Message = "User creation failed",
-                        Errors = addUser.Errors.Select(x => x.Description)
-                    };
-                }
-
-                await transaction.CommitAsync();
+                _logger.LogWarning("Registration failed: DTO is null");
+                return Fail(400, "Invalid registration data");
             }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-            await Helper.SendVerificationEmailAsync(registerDTO.Email!, redisService, mailService, logger);
 
-            var result = new AuthResult
+            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.UserName))
             {
-                Email = user.Email,
-                Role = registerDTO.Role.ToString(),
-                Succeeded = true,
-                Username = user.UserName,
-                UserId = user.Id,
+                _logger.LogWarning("Registration failed: Email or username is empty");
+                return Fail(400, "Email and username are required");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+            {
+                _logger.LogWarning("Registration failed: Password is empty for user {Username}", dto.UserName);
+                return Fail(400, "Password is required");
+            }
+
+            var user = _mapper.Map<AppUser>(dto);
+
+            var exists = await Helper.CheckExists(dto.Email, dto.UserName, _userManager);
+            if (!exists)
+            {
+                _logger.LogWarning("Registration failed: Email {Email} or username {Username} already exists", dto.Email, dto.UserName);
+                return Fail(400, "Email or username already exists");
+            }
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+            {
+                _logger.LogError("User creation failed for {Email}: {Errors}", dto.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return Fail(400, "User creation failed", result.Errors.Select(e => e.Description));
+            }
+
+            await _userManager.AddToRoleAsync(user, dto.Role.ToString());
+            _logger.LogInformation("User {UserId} registered successfully with email {Email} and role {Role}", user.Id, dto.Email, dto.Role);
+
+            await Helper.SendVerificationEmailAsync(dto.Email, _redisService, _mailService, _logger);
+            if (!string.IsNullOrEmpty(dto.PhoneNumber))
+                await Helper.SendVerificationPhoneAsync(dto.PhoneNumber, _redisService, _phoneService, _logger);
+            return new ApiResponse<AuthResult>
+            {
+                Success = true,
+                StatusCode = 200,
                 Message = "Account created successfully"
             };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during registration for email: {Email}", dto?.Email);
+            return Fail(500, "An error occurred during registration");
+        }
+    }
+
+    public async Task<ApiResponse<AuthResult>> Login(LoginDTO dto)
+    {
+        try
+        {
+            _logger.LogInformation("Login attempt for email: {Email}", dto.Email);
+
+            // Validation checks
+            if (dto == null)
+            {
+                _logger.LogWarning("Login failed: DTO is null");
+                return Fail(400, "Invalid login data");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Email))
+            {
+                _logger.LogWarning("Login failed: Email is empty");
+                return Fail(400, "Email is required");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+            {
+                _logger.LogWarning("Login failed: Password is empty for email {Email}", dto.Email);
+                return Fail(400, "Password is required");
+            }
+
+            var user = await _userManager.FindByEmailAsync(dto.Email!);
+            if (user == null)
+            {
+                _logger.LogWarning("Login failed: User not found for email {Email}", dto.Email);
+                return Fail(400, "Invalid credentials");
+            }
+
+            var check = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
+            if (!check.Succeeded)
+            {
+                _logger.LogWarning("Login failed: Invalid password for user {UserId}", user.Id);
+                return Fail(400, "Invalid credentials");
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogWarning("Login failed: Email not verified for user {UserId}", user.Id);
+                return Fail(400, "Email not verified");
+            }
+
+            var accessToken = await _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            _logger.LogInformation("User {UserId} logged in successfully", user.Id);
 
             return new ApiResponse<AuthResult>
             {
                 Success = true,
                 StatusCode = 200,
-                Message = "Account created successfully Please Verify Your Email",
-                Data = result
-            };
-        }
-
-        public async Task<ApiResponse<AuthResult>> VerifyEmail(string email, string code)
-        {
-            try
-            {
-                string key = $"{email}:Code:{code}";
-                var savedCode = await redisService.GetAsync(key);
-                if (savedCode == null)
-                {
-                    logger.LogWarning("Invalid verification code for {Email}", email);
-                    return new ApiResponse<AuthResult>
-                    {
-                        Success = false,
-                        StatusCode = 400,
-                        Message = "Invalid or expired verification code"
-                    };
-                }
-
-                var user = await userManager.FindByEmailAsync(email);
-                if (user == null)
-                {
-                    return new ApiResponse<AuthResult>
-                    {
-                        Success = false,
-                        StatusCode = 400,
-                        Message = "User not found"
-                    };
-                }
-
-                user.EmailConfirmed = true;
-                await userManager.UpdateAsync(user);
-                await redisService.DeleteAsync(key);
-                var ipAddress = IpAddressHelper.GetClientIpAddress(httpContextAccessor);
-                await tokenService.RevokeAllUserTokensAsync(user.Id, ipAddress, "EmailVerification");
-
-                var accessToken = await tokenService.GenerateAccessToken(user);
-                var refreshToken = tokenService.GenerateRefreshToken();
-                var refresh = await tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
-
-                string Refreshkey = $"{user.Id}:User:{refresh.CreatedByIp}";
-                await redisService.SetAsync(Refreshkey, refreshToken, TimeSpan.FromDays(15));
-
-                var roles = await userManager.GetRolesAsync(user);
-
-                logger.LogInformation("Email verified for {Email}", email);
-                var result = new AuthResult
+                Data = new AuthResult
                 {
                     Succeeded = true,
                     Token = accessToken,
@@ -153,42 +165,106 @@ namespace DentalClinicProject.Infrastructure.Services
                     UserId = user.Id,
                     Email = user.Email,
                     Username = user.UserName,
-                    Role = roles.FirstOrDefault(),
-                    Message = "Email verified successfully"
-                };
-                return new ApiResponse<AuthResult>
-                {
-                    Success = true,
-                    StatusCode = 200,
-                    Message = "Account created successfully Please Login Again",
-                    Data = result
-                };
-            }
-            catch (Exception ex)
+                    Role = roles.FirstOrDefault()
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during login for email: {Email}", dto?.Email);
+            return Fail(500, "An error occurred during login");
+        }
+    }
+
+    public async Task LogoutAsync(string userId, string accessToken)
+    {
+        try
+        {
+            _logger.LogInformation("Logout attempt for user: {UserId}", userId);
+
+            // Validation checks
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                logger.LogError(ex, "Error during email verification for {Email}", email);
-                return new ApiResponse<AuthResult>
-                {
-                    Success = false,
-                    StatusCode = 400,
-                    Message = "An error occurred during email verification"
-                };
+                _logger.LogWarning("Logout failed: UserId is empty");
+                throw new ArgumentException("UserId is required", nameof(userId));
             }
-        }
 
-        public Task<AuthResult> Login(LoginDTO loginDTO)
-        {
-            throw new NotImplementedException();
-        }
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _logger.LogWarning("Logout failed: AccessToken is empty for user {UserId}", userId);
+                throw new ArgumentException("AccessToken is required", nameof(accessToken));
+            }
 
-        public Task<bool> LogoutAllAsync(string userId, string accessToken)
-        {
-            throw new NotImplementedException();
-        }
+            // Blacklist the current access token for its remaining lifetime (30 minutes to match JWT expiry)
+            var key = $"{userId}:{accessToken}";
+            var blacklisted = await _redisService.SetAsync(key, "blacklisted", TimeSpan.FromMinutes(30));
+            
+            if (!blacklisted)
+            {
+                _logger.LogWarning("Failed to blacklist token for user {UserId}", userId);
+            }
 
-        public Task<bool> LogoutAsync(string userId, string accessToken)
-        {
-            throw new NotImplementedException();
+            // Revoke all refresh tokens (since we don't know which one is current)
+            var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
+            await _tokenService.RevokeAllUserTokensAsync(userId, ipAddress, "Logout");
+
+            _logger.LogInformation("User {UserId} logged out successfully", userId);
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task LogoutAllAsync(string userId, string accessToken)
+    {
+        try
+        {
+            _logger.LogInformation("Logout all sessions attempt for user: {UserId}", userId);
+
+            // Validation checks
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                _logger.LogWarning("Logout all failed: UserId is empty");
+                throw new ArgumentException("UserId is required", nameof(userId));
+            }
+
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _logger.LogWarning("Logout all failed: AccessToken is empty for user {UserId}", userId);
+                throw new ArgumentException("AccessToken is required", nameof(accessToken));
+            }
+
+            var key = $"{userId}:{accessToken}";
+            var blacklisted = await _redisService.SetAsync(key, "blacklisted", TimeSpan.FromMinutes(30));
+            
+            if (!blacklisted)
+            {
+                _logger.LogWarning("Failed to blacklist token for user {UserId} during logout all", userId);
+            }
+
+            // Revoke all refresh tokens
+            var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
+            await _tokenService.RevokeAllUserTokensAsync(userId, ipAddress, "LogoutAll");
+
+            _logger.LogInformation("User {UserId} logged out from all sessions successfully", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout all for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    private ApiResponse<AuthResult> Fail(int code, string message, IEnumerable<string>? errors = null)
+    {
+        return new ApiResponse<AuthResult>
+        {
+            Success = false,
+            StatusCode = code,
+            Message = message,
+            Errors = errors ?? Enumerable.Empty<string>()
+        };
     }
 }

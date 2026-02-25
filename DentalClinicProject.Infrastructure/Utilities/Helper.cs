@@ -31,7 +31,8 @@ namespace DentalClinicProject.Infrastructure.Utilities
             return new string(result);
         }
 
-        public static async Task SendVerificationEmailAsync(string email, IRedisService redisService, Core.Interfaces.IServices.IMailService mailService,
+        public static async Task SendVerificationEmailAsync(string email, IRedisService redisService,
+            Core.Interfaces.IServices.IMailService mailService,
             ILogger<AuthService> logger)
         {
             try
@@ -44,6 +45,22 @@ namespace DentalClinicProject.Infrastructure.Utilities
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to send verification email to {Email}", email);
+                throw;
+            }
+        }
+        public static async Task SendVerificationPhoneAsync(string phone, IRedisService redisService,
+            IPhoneService phoneService,
+            ILogger<AuthService> logger)
+        {
+            try
+            {
+                string key = $"user:{phone}";
+                await redisService.SetAsync(key, "PhoneVerify", TimeSpan.FromMinutes(5));
+                await phoneService.SendCodeAsync(phone);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send verification phone to {phone}", phone);
                 throw;
             }
         }
