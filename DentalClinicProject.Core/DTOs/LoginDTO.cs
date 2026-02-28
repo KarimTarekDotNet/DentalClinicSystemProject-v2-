@@ -2,9 +2,8 @@
 {
     public record LoginDTO
     {
-        public string? UserName { get; set; }
-        public string? Email { get; set; }
-        public string? PhoneNumber { get; set; }
+        // Can be Email, Username, or PhoneNumber
+        public string Identifier { get; set; } = null!;
         public string Password { get; set; } = null!;
     }
 }

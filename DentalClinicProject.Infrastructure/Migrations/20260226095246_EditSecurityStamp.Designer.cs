@@ -4,6 +4,7 @@ using DentalClinicProject.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260226095246_EditSecurityStamp")]
+    partial class EditSecurityStamp
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -470,7 +473,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
@@ -503,10 +506,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.HasIndex("PhoneNumber")
-                        .IsUnique()
-                        .HasFilter("[PhoneNumber] IS NOT NULL");
-
                     b.ToTable("AspNetUsers", (string)null);
 
                     b.HasData(
@@ -526,7 +525,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PhoneNumberConfirmed = false,
                             Provider = "Local",
                             ProviderId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                            SecurityStamp = "QURNSU5TRUNVUklUWVNUQU1QMDA=",
+                            SecurityStamp = "ADMINSECURITYSTAMP001",
                             TwoFactorEnabled = false,
                             UserName = "admin@dentalclinic.com"
                         },
@@ -546,7 +545,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PhoneNumberConfirmed = false,
                             Provider = "Local",
                             ProviderId = "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-                            SecurityStamp = "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=",
+                            SecurityStamp = "DOCTOR1SECURITYSTAMP001",
                             TwoFactorEnabled = false,
                             UserName = "doctor1@dentalclinic.com"
                         },
@@ -566,7 +565,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PhoneNumberConfirmed = false,
                             Provider = "Local",
                             ProviderId = "c3d4e5f6-a7b8-9012-cdef-123456789012",
-                            SecurityStamp = "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=",
+                            SecurityStamp = "DOCTOR2SECURITYSTAMP001",
                             TwoFactorEnabled = false,
                             UserName = "doctor2@dentalclinic.com"
                         },
@@ -586,7 +585,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PhoneNumberConfirmed = false,
                             Provider = "Local",
                             ProviderId = "d4e5f6a7-b8c9-0123-def1-234567890123",
-                            SecurityStamp = "UEFUSUVOVDFTRUNTVVJJVFVTVEFNUA==",
+                            SecurityStamp = "PATIENT1SECURITYSTAMP001",
                             TwoFactorEnabled = false,
                             UserName = "patient1@example.com"
                         },
@@ -606,7 +605,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PhoneNumberConfirmed = false,
                             Provider = "Local",
                             ProviderId = "e5f6a7b8-c9d0-1234-ef12-345678901234",
-                            SecurityStamp = "UEFUSUVOVDJTRUNTVVJJVFVTVEFNUA==",
+                            SecurityStamp = "PATIENT2SECURITYSTAMP001",
                             TwoFactorEnabled = false,
                             UserName = "patient2@example.com"
                         },
@@ -626,7 +625,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             PhoneNumberConfirmed = false,
                             Provider = "Local",
                             ProviderId = "f6a7b8c9-d0e1-2345-f123-456789012345",
-                            SecurityStamp = "VVNFUlNFQ1VSSVRZU1RBTVA=",
+                            SecurityStamp = "USERSECURITYSTAMP001",
                             TwoFactorEnabled = false,
                             UserName = "user@example.com"
                         });

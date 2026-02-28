@@ -32,7 +32,7 @@ namespace DentalClinicProject.Infrastructure.Repository
             AuthService = new AuthService(userManager, signInManager, mapper, TokenService, context,
             RedisService, httpContextAccessor, authLogger, mailService, phoneService);
             EmailVerificationService = new EmailVerificationService(userManager, RedisService,
-            TokenService, httpContextAccessor, emailLogger);
+            TokenService, httpContextAccessor, emailLogger, mailService, phoneService, authLogger);
             PhoneVerificationService = new PhoneVerificationService(userManager, phoneService, RedisService, phoneLogger);
         }
 

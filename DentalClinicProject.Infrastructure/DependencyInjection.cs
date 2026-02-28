@@ -1,11 +1,12 @@
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Core.Interfaces.IServices;
-using DentalClinicProject.Core.Validator;
+using DentalClinicProject.Core.Validators;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Repository;
 using DentalClinicProject.Infrastructure.Services.AuthHelper;
 using FluentValidation;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,16 +27,19 @@ namespace DentalClinicProject.Infrastructure
                 return ConnectionMultiplexer.Connect(connectionString);
             });
 
-            services.AddValidatorsFromAssembly(typeof(ValidRegister).Assembly);
-            services.AddValidatorsFromAssemblyContaining<ValidRegister>();
-
+            services.AddValidatorsFromAssemblyContaining<LoginDTOValidator>();
             services.AddIdentity<AppUser, IdentityRole>(options =>
             {
-                options.Password.RequiredLength = 8;
-                options.Password.RequireDigit = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireNonAlphanumeric = true;
+                // Password settings - disable built-in validation (we use FluentValidation)
+                options.Password.RequiredLength = 1; // Minimum to disable
+                options.Password.RequireDigit = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredUniqueChars = 0;
+                
+                // User settings
+                options.User.RequireUniqueEmail = true;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();

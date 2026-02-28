@@ -31,16 +31,58 @@ namespace DentalClinicProject.Infrastructure.Utilities
             return new string(result);
         }
 
+        public static string GenerateSecureToken(int length = 32)
+        {
+            using var rng = RandomNumberGenerator.Create();
+            var randomBytes = new byte[length];
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
+        }
+
         public static async Task SendVerificationEmailAsync(string email, IRedisService redisService,
             Core.Interfaces.IServices.IMailService mailService,
             ILogger<AuthService> logger)
         {
             try
             {
-                var code = GenerateVerificationCode();
-                string key = $"{email}:Code:{code}";
-                await redisService.SetAsync(key, code, TimeSpan.FromMinutes(15));
+                // Normalize email
+                email = email.Trim().ToLowerInvariant();
+                
+                // Get and delete old active code if exists
+                var activeCodeKey = RedisKeys.ActiveEmailVerificationCode(email);
+                var oldCode = await redisService.GetAsync(activeCodeKey);
+                
+                if (!string.IsNullOrEmpty(oldCode))
+                {
+                    // Delete old code
+                    var oldCodeKey = RedisKeys.EmailVerificationCode(email, oldCode);
+                    await redisService.DeleteAsync(oldCodeKey);
+                    logger.LogInformation("Deleted old verification code for email {Email}", email);
+                }
+                
+                // Generate new code (uppercase)
+                var code = GenerateVerificationCode().ToUpperInvariant();
+                
+                // Store new code with email:code pattern (for verification lookup)
+                string key = RedisKeys.EmailVerificationCode(email, code);
+                logger.LogInformation("Storing verification code - Email: {Email}, Code: {Code}, Key: {Key}", email, code, key);
+                
+                var result = await redisService.SetAsync(key, code, TimeSpan.FromMinutes(15));
+                if (!result)
+                {
+                    logger.LogError("Failed to store verification code in Redis - Key: {Key}", key);
+                    throw new Exception("Failed to store verification code in Redis");
+                }
+                
+                logger.LogInformation("Verification code stored successfully in Redis - Key: {Key}", key);
+                
+                // Store active code reference (to track and delete old codes)
+                await redisService.SetAsync(activeCodeKey, code, TimeSpan.FromMinutes(15));
+                
+                // Send email
                 await mailService.SendVerificationCodeEmail(email, code);
+                
+                logger.LogInformation("New verification code sent to email {Email}, old code invalidated", email);
             }
             catch (Exception ex)
             {
@@ -54,7 +96,7 @@ namespace DentalClinicProject.Infrastructure.Utilities
         {
             try
             {
-                string key = $"user:{phone}";
+                string key = RedisKeys.PhoneVerificationCode(phone);
                 await redisService.SetAsync(key, "PhoneVerify", TimeSpan.FromMinutes(5));
                 await phoneService.SendCodeAsync(phone);
             }

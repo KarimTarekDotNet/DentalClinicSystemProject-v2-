@@ -7,13 +7,14 @@ namespace DentalClinicProject.Core.Interfaces.IServices
     {
         Task<ApiResponse<AuthResult>> Register(RegisterDTO registerDTO);
         Task<ApiResponse<AuthResult>> Login(LoginDTO loginDTO);
-        Task LogoutAsync(string userId, string accessToken);
-        Task LogoutAllAsync(string userId, string accessToken);
+        Task<ApiResponse<AuthResult>> VerifyLoginCode(string identifier, string code);
+        Task<ApiResponse<bool>> LogoutAsync(string userId, string accessToken);
+        Task<ApiResponse<bool>> LogoutAllAsync(string userId, string accessToken);
     }
     public interface IEmailVerificationService
     {
         Task<ApiResponse<AuthResult>> VerifyEmailAsync(string email, string code);
-        Task<bool> ResendEmailVerificationCodeAsync(string userId);
+        Task<bool> ResendEmailVerificationCodeAsync(string sessionToken);
     }
     public interface IPhoneVerificationService
     {

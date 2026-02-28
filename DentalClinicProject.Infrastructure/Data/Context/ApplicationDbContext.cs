@@ -27,6 +27,12 @@ namespace DentalClinicProject.Infrastructure.Data.Context
             base.OnModelCreating(builder);
             builder.UseCollation("Arabic_CI_AI");
 
+            // Configure AppUser
+            builder.Entity<AppUser>()
+                .HasIndex(u => u.PhoneNumber)
+                .IsUnique()
+                .HasFilter("[PhoneNumber] IS NOT NULL"); // Only enforce uniqueness for non-null values
+
             // Configure Relationships
 
             // AppUser -> Admin (One-to-One)

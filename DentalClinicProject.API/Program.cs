@@ -1,8 +1,12 @@
 using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
+using DentalClinicProject.Core.Validators;
 using DentalClinicProject.Infrastructure;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -17,7 +21,13 @@ namespace DentalClinicProject.API
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddInfrastructure(builder.Configuration);
+
+            // Add FluentValidation
             builder.Services.AddControllers();
+
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddFluentValidationClientsideAdapters();
+
             builder.Services.AddOpenApi();
 
             builder.Services.AddAutoMapper(op =>
@@ -38,7 +48,13 @@ namespace DentalClinicProject.API
             });
 
             // Authentication
-            var key = Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]!);
+            var jwtKey = builder.Configuration["JWT:Key"];
+            if (string.IsNullOrWhiteSpace(jwtKey))
+            {
+                throw new InvalidOperationException("JWT:Key is not configured in appsettings or user secrets");
+            }
+            
+            var key = Encoding.UTF8.GetBytes(jwtKey);
 
             builder.Services.AddAuthentication(op =>
             {
@@ -47,7 +63,7 @@ namespace DentalClinicProject.API
             })
             .AddJwtBearer(op =>
             {
-                op.RequireHttpsMetadata = false;
+                op.RequireHttpsMetadata = true;
                 op.SaveToken = false;
 
                 op.TokenValidationParameters = new TokenValidationParameters
@@ -68,6 +84,12 @@ namespace DentalClinicProject.API
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
             });
+            builder.Services.Configure<IdentityOptions>(options =>
+            {
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            });
 
             builder.Services.AddRateLimiter(option =>
             {
@@ -75,7 +97,7 @@ namespace DentalClinicProject.API
                 {
                     opt.PermitLimit = 30;
                     opt.QueueLimit = 5;
-                    opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 }).AddPolicy("PerIpSliding", context =>
                 {
                     var ip = context.Connection.RemoteIpAddress?.ToString();
@@ -120,8 +142,8 @@ namespace DentalClinicProject.API
             app.UseCors("Cors");
 
             app.UseAuthentication();
-            app.UseRateLimiter();
             app.UseAuthorization();
+            app.UseRateLimiter();
             app.MapControllers().RequireRateLimiting("PerIpSliding");
 
             app.Run();

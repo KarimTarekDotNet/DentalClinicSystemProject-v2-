@@ -270,9 +270,20 @@ namespace DentalClinicProject.Infrastructure.Services.AuthHelper
                     CreatedByIp = ipAddress
                 };
 
-                await context.RefreshTokens.AddAsync(refreshTokenRecord);
+                var existing = await context.RefreshTokens
+                    .FirstOrDefaultAsync(r => r.UserId == userId);
+                if (existing != null)
+                {
+                    existing.Token = refreshToken;
+                    existing.ExpiryDate = DateTime.UtcNow.AddDays(15);
+                    context.RefreshTokens.Update(existing);
+                }
+                else
+                {
+                    await context.RefreshTokens.AddAsync(new RefreshToken { UserId = userId, Token = refreshToken });
+                }
                 await context.SaveChangesAsync();
-                
+
                 _logger.LogInformation("Refresh token saved successfully for user {UserId}", userId);
                 return refreshTokenRecord;
             }

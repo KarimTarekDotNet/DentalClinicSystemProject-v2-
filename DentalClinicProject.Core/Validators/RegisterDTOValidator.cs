@@ -1,16 +1,16 @@
-﻿using DentalClinicProject.Core.DTOs;
+using DentalClinicProject.Core.DTOs;
 using FluentValidation;
 
-namespace DentalClinicProject.Core.Validator
+namespace DentalClinicProject.Core.Validators
 {
-    public class ValidRegister : AbstractValidator<RegisterDTO>
+    public class RegisterDTOValidator : AbstractValidator<RegisterDTO>
     {
-        public ValidRegister()
+        public RegisterDTOValidator()
         {
             RuleFor(x => x.FirstName)
-                .NotEmpty().WithMessage("First name is required.")
-                .MinimumLength(4).WithMessage("First name must be at least 4 characters.")
-                .MaximumLength(100).WithMessage("First name cannot exceed 100 characters.");
+               .NotEmpty().WithMessage("First name is required.")
+               .MinimumLength(4).WithMessage("First name must be at least 4 characters.")
+               .MaximumLength(100).WithMessage("First name cannot exceed 100 characters.");
 
             RuleFor(x => x.LastName)
                 .NotEmpty().WithMessage("Last name is required.")
@@ -29,9 +29,9 @@ namespace DentalClinicProject.Core.Validator
                 .EmailAddress().WithMessage("Please enter a valid email address.");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Password is required.")
-                .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z]).{8,15}$")
-                .WithMessage("Password must be 8–15 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
+               .NotEmpty().WithMessage("Password is required.")
+               .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,15}$")
+               .WithMessage("Password must be 8–15 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character."); ;
 
             RuleFor(x => x.ConfirmPassword)
                 .NotEmpty().WithMessage("Confirm password is required.")
@@ -39,8 +39,8 @@ namespace DentalClinicProject.Core.Validator
                 .WithMessage("Confirm password must match the password.");
 
             RuleFor(x => x.PhoneNumber)
-                .Matches(@"^(\([0-9]{3}\)|[0-9]{3})[\s\-]?[0-9]{3}[\s\-]?[0-9]{4}$")
-                .WithMessage("Phone number must be in a valid format (e.g., 123-456-7890 or (123) 456-7890).");
+                .Matches(@"^\+?\d{10,15}$")
+                .WithMessage("Phone number must be in a valid international format (e.g., +201234567890).");
         }
     }
 }
