@@ -147,5 +147,15 @@ namespace DentalClinicProject.API.Controllers
 
             return Ok(new { message = "Verification code sent successfully" });
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO dto)
+        {
+            var response = await work.AuthService.RefreshTokenAsync(dto);
+            if (!response.Success)
+                return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
+
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

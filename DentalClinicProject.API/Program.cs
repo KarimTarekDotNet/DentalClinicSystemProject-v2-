@@ -1,8 +1,6 @@
 using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
-using DentalClinicProject.Core.Validators;
 using DentalClinicProject.Infrastructure;
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;

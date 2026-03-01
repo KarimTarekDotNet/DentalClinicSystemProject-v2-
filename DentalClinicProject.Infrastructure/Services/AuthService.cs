@@ -615,6 +615,62 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenDTO dto)
+    {
+        try
+        {
+            var refreshToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(r => r.Token == dto.RefreshToken);
+
+            if (refreshToken == null || !refreshToken.IsActive)
+                return Fail(404, "Invalid or expired refresh token");
+
+            var user = await _userManager.FindByIdAsync(refreshToken.UserId);
+            if (user == null)
+                return Fail(404, "User not found");
+
+            var newAccessToken = await _tokenService.GenerateAccessToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
+            refreshToken.Revoke(ipAddress, "Refresh");
+
+            var savedRefresh = await _tokenService.SaveRefreshTokenAsync(user.Id, newRefreshToken);
+            await _context.SaveChangesAsync();
+
+            var redisKey = RedisKeys.RefreshToken(user.Id, savedRefresh.Id.ToString());
+            await _redisService.SetAsync(redisKey, newRefreshToken, TimeSpan.FromDays(15));
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            _logger.LogInformation("Token refreshed for user {UserId}", user.Id);
+
+            var result = new ApiResponse<AuthResult>
+            {
+                Success = true,
+                StatusCode = 200,
+                Message = "Token refreshed successfully",
+                Data = new AuthResult
+                {
+                    Succeeded = true,
+                    Token = newAccessToken,
+                    RefreshToken = newRefreshToken,
+                    UserId = user.Id,
+                    Email = user.Email!,
+                    Username = user.UserName!,
+                    Role = roles.FirstOrDefault() ?? string.Empty
+                }
+            };
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error refreshing token");
+            return Fail(404, "An error occurred while refreshing token");
+        }
+    }
+
+
     private ApiResponse<AuthResult> Fail(int code, string message, IEnumerable<string>? errors = null)
     {
         return new ApiResponse<AuthResult>

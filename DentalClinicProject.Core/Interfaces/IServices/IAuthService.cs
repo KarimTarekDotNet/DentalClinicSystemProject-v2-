@@ -10,6 +10,7 @@ namespace DentalClinicProject.Core.Interfaces.IServices
         Task<ApiResponse<AuthResult>> VerifyLoginCode(string identifier, string code);
         Task<ApiResponse<bool>> LogoutAsync(string userId, string accessToken);
         Task<ApiResponse<bool>> LogoutAllAsync(string userId, string accessToken);
+        Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenDTO dto);
     }
     public interface IEmailVerificationService
     {
