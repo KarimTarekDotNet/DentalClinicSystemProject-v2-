@@ -23,7 +23,8 @@ namespace DentalClinicProject.Infrastructure.Repository
             SignInManager<AppUser> signInManager, IConnectionMultiplexer connectionMultiplexer, IMapper mapper,
             IHttpContextAccessor httpContextAccessor, IMailService mailService, IPhoneService phoneService,
             ILogger<UnitOfWork> logger, ILogger<AuthService> authLogger, ILogger<EmailVerificationService> emailLogger,
-            ILogger<PhoneVerificationService> phoneLogger, ILogger<RedisService> redisLogger, ILogger<TokenService> tokenLogger)
+            ILogger<PhoneVerificationService> phoneLogger, ILogger<RedisService> redisLogger, ILogger<TokenService> tokenLogger,
+            ILogger<ExternalLoginService> externalLoginLogger)
         {
             _context = context;
             _logger = logger;
@@ -34,6 +35,8 @@ namespace DentalClinicProject.Infrastructure.Repository
             EmailVerificationService = new EmailVerificationService(userManager, RedisService,
             TokenService, httpContextAccessor, emailLogger, mailService, phoneService, authLogger);
             PhoneVerificationService = new PhoneVerificationService(userManager, phoneService, RedisService, phoneLogger);
+            ExternalLoginService = new ExternalLoginService(userManager, signInManager, TokenService,
+            RedisService, context, httpContextAccessor, externalLoginLogger);
         }
 
         public ITokenService TokenService { get; }
@@ -41,5 +44,6 @@ namespace DentalClinicProject.Infrastructure.Repository
         public IAuthService AuthService { get; }
         public IEmailVerificationService EmailVerificationService { get; }
         public IPhoneVerificationService PhoneVerificationService { get; }
+        public IExternalLoginService ExternalLoginService { get; }
     }
 }

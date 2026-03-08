@@ -75,7 +75,21 @@ namespace DentalClinicProject.API
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ClockSkew = TimeSpan.Zero
                 };
-            });
+            })
+            .AddCookie(); // Add cookie authentication
+            
+            // Add Google authentication if configured
+            var googleClientId = builder.Configuration["Google:ClientId"];
+            if (!string.IsNullOrWhiteSpace(googleClientId))
+            {
+                builder.Services.AddAuthentication().AddGoogle(options =>
+                {
+                    options.ClientId = googleClientId;
+                    options.ClientSecret = builder.Configuration["Google:ClientSecret"]!;
+                    options.SaveTokens = true;
+                });
+            }
+
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders =

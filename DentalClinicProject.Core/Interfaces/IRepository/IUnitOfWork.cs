@@ -10,5 +10,6 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
         IAuthService AuthService { get; }
         IEmailVerificationService EmailVerificationService { get; }
         IPhoneVerificationService PhoneVerificationService { get; }
+        IExternalLoginService ExternalLoginService { get; }
     }
 }
