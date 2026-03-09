@@ -1,3 +1,4 @@
+using DentalClinicProject.Core.DTOs;
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Enum;
 using DentalClinicProject.Core.Interfaces.IServices;
@@ -40,53 +41,49 @@ namespace DentalClinicProject.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<ApiResponse<AuthResult>> ExternalSignInAsync(
-            string provider,
-            string providerKey,
-            string email,
-            string firstName,
-            string lastName)
+        public async Task<ApiResponse<AuthResult>> ExternalSignInAsync(ExternalLoginCallbackDTO CallbackDTO)
         {
             try
             {
-                _logger.LogInformation("External sign-in attempt with provider: {Provider}, email: {Email}", provider, email);
+                _logger.LogInformation("External sign-in attempt with provider: {Provider}, email: {Email}",
+                    CallbackDTO.Provider, CallbackDTO.Email);
 
-                if (string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(providerKey))
+                if (string.IsNullOrWhiteSpace(CallbackDTO.Provider) || string.IsNullOrWhiteSpace(CallbackDTO.ProviderKey))
                 {
                     _logger.LogWarning("External sign-in failed: Provider or ProviderKey is empty");
                     return Fail(400, "Invalid external login data");
                 }
 
-                if (string.IsNullOrWhiteSpace(email))
+                if (string.IsNullOrWhiteSpace(CallbackDTO.Email))
                 {
                     _logger.LogWarning("External sign-in failed: Email is required");
                     return Fail(400, "Email is required from external provider");
                 }
 
                 // Parse provider enum
-                if (!System.Enum.TryParse<Provider>(provider, true, out var providerEnum))
+                if (!Enum.TryParse<Provider>(CallbackDTO.Provider, true, out var providerEnum))
                 {
-                    _logger.LogWarning("External sign-in failed: Invalid provider {Provider}", provider);
+                    _logger.LogWarning("External sign-in failed: Invalid provider {Provider}", CallbackDTO.Provider);
                     return Fail(400, "Invalid provider");
                 }
 
                 // Check if user exists by email
-                var user = await _userManager.FindByEmailAsync(email);
+                var user = await _userManager.FindByEmailAsync(CallbackDTO.Email);
 
                 if (user == null)
                 {
                     // Create new user
-                    _logger.LogInformation("Creating new user from external provider: {Provider}", provider);
+                    _logger.LogInformation("Creating new user from external provider: {Provider}", CallbackDTO.Provider);
 
                     user = new AppUser
                     {
-                        UserName = email.Split('@')[0] + "_" + Guid.NewGuid().ToString().Substring(0, 8),
-                        Email = email,
+                        UserName = CallbackDTO.Email.Split('@')[0] + "_" + Guid.NewGuid().ToString().Substring(0, 8),
+                        Email = CallbackDTO.Email,
                         EmailConfirmed = true, // External providers verify email
-                        FirstName = firstName ?? "User",
-                        LastName = lastName ?? "External",
+                        FirstName = CallbackDTO.FirstName ?? "User",
+                        LastName = CallbackDTO.LastName ?? "External",
                         Provider = providerEnum,
-                        ProviderId = providerKey
+                        ProviderId = CallbackDTO.ProviderKey
                     };
 
                     var createResult = await _userManager.CreateAsync(user);
@@ -97,12 +94,13 @@ namespace DentalClinicProject.Infrastructure.Services
                         return Fail(400, "Failed to create user", createResult.Errors.Select(e => e.Description));
                     }
 
-                    // Add default role (Patient)
-                    await _userManager.AddToRoleAsync(user, "Patient");
+                    // Add default role (user)
+                    await _userManager.AddToRoleAsync(user, Role.User.ToString());
 
                     // Add external login
                     var addLoginResult = await _userManager.AddLoginAsync(user,
-                        new UserLoginInfo(provider, providerKey, provider));
+                        new UserLoginInfo(CallbackDTO.Provider, 
+                        CallbackDTO.ProviderKey, CallbackDTO.Provider));
 
                     if (!addLoginResult.Succeeded)
                     {
@@ -111,22 +109,24 @@ namespace DentalClinicProject.Infrastructure.Services
                     }
 
                     // Cache user in Redis
-                    await _redisService.SetAsync(RedisKeys.UserByEmail(email), user.Id, TimeSpan.FromHours(24));
+                    await _redisService.SetAsync(RedisKeys.UserByEmail(CallbackDTO.Email), user.Id, TimeSpan.FromHours(24));
                     await _redisService.SetAsync(RedisKeys.UserByUsername(user.UserName!), user.Id, TimeSpan.FromHours(24));
                     await _redisService.SetAsync(RedisKeys.UserById(user.Id), user.Id, TimeSpan.FromHours(24));
 
-                    _logger.LogInformation("New user {UserId} created successfully from {Provider}", user.Id, provider);
+                    _logger.LogInformation("New user {UserId} created successfully from {Provider}", user.Id, CallbackDTO.Provider);
                 }
                 else
                 {
                     // User exists - check if external login is already linked
-                    var existingLogin = await _userManager.FindByLoginAsync(provider, providerKey);
+                    var existingLogin = await _userManager.FindByLoginAsync(CallbackDTO.Provider,
+                        CallbackDTO.ProviderKey);
 
                     if (existingLogin == null)
                     {
                         // Link external login to existing user
                         var addLoginResult = await _userManager.AddLoginAsync(user,
-                            new UserLoginInfo(provider, providerKey, provider));
+                            new UserLoginInfo(CallbackDTO.Provider,
+                            CallbackDTO.ProviderKey, CallbackDTO.Provider));
 
                         if (!addLoginResult.Succeeded)
                         {
@@ -135,14 +135,15 @@ namespace DentalClinicProject.Infrastructure.Services
                             return Fail(400, "Failed to link external login", addLoginResult.Errors.Select(e => e.Description));
                         }
 
-                        _logger.LogInformation("External login {Provider} linked to existing user {UserId}", provider, user.Id);
+                        _logger.LogInformation("External login {Provider} linked to existing user {UserId}",
+                            CallbackDTO.Provider, user.Id);
                     }
 
                     // Update provider info if needed
                     if (user.Provider == Provider.Local)
                     {
                         user.Provider = providerEnum;
-                        user.ProviderId = providerKey;
+                        user.ProviderId = CallbackDTO.ProviderKey;
                         await _userManager.UpdateAsync(user);
                     }
                 }
@@ -159,7 +160,7 @@ namespace DentalClinicProject.Infrastructure.Services
 
                 var roles = await _userManager.GetRolesAsync(user);
 
-                _logger.LogInformation("User {UserId} signed in successfully via {Provider}", user.Id, provider);
+                _logger.LogInformation("User {UserId} signed in successfully via {Provider}", user.Id, CallbackDTO.Provider);
 
                 return new ApiResponse<AuthResult>
                 {
@@ -180,7 +181,7 @@ namespace DentalClinicProject.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during external sign-in with provider: {Provider}", provider);
+                _logger.LogError(ex, "Unexpected error during external sign-in with provider: {Provider}", CallbackDTO.Provider);
                 return Fail(500, "An error occurred during external sign-in");
             }
         }

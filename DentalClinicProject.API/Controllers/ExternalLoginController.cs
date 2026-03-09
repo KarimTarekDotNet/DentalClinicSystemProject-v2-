@@ -35,19 +35,21 @@ namespace DentalClinicProject.API.Controllers
                     return BadRequest(new { message = "External authentication failed" });
                 }
 
-                var provider = info.Properties?.Items[".AuthScheme"] ?? "Unknown";
-                var providerKey = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                var firstName = info.Principal.FindFirstValue(ClaimTypes.GivenName) ?? "";
-                var lastName = info.Principal.FindFirstValue(ClaimTypes.Surname) ?? "";
+                var ExternalLoginInfo = new ExternalLoginCallbackDTO
+                {
+                    Provider = info.Properties?.Items[".AuthScheme"] ?? "Unknown",
+                    ProviderKey = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? "",
+                    Email = info.Principal.FindFirstValue(ClaimTypes.Email) ?? "",
+                    FirstName = info.Principal.FindFirstValue(ClaimTypes.GivenName) ?? "",
+                    LastName = info.Principal.FindFirstValue(ClaimTypes.Surname) ?? ""
+                };
 
-                if (string.IsNullOrWhiteSpace(providerKey) || string.IsNullOrWhiteSpace(email))
+                if (string.IsNullOrWhiteSpace(ExternalLoginInfo.ProviderKey) || string.IsNullOrWhiteSpace(ExternalLoginInfo.Email))
                 {
                     return BadRequest(new { message = "Required information not provided by external provider" });
                 }
 
-                var response = await work.ExternalLoginService.ExternalSignInAsync(
-                    provider, providerKey, email, firstName, lastName);
+                var response = await work.ExternalLoginService.ExternalSignInAsync(ExternalLoginInfo);
 
                 if (!response.Success)
                     return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
@@ -67,7 +69,7 @@ namespace DentalClinicProject.API.Controllers
         }
 
         [HttpPost("signin-external")]
-        public async Task<IActionResult> SignInExternal([FromBody] ExternalLoginRequest request)
+        public async Task<IActionResult> SignInExternal([FromBody] ExternalLoginCallbackDTO request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Provider) ||
                 string.IsNullOrWhiteSpace(request.ProviderKey) || string.IsNullOrWhiteSpace(request.Email))
@@ -75,12 +77,7 @@ namespace DentalClinicProject.API.Controllers
                 return BadRequest(new { message = "Invalid external login data" });
             }
 
-            var response = await work.ExternalLoginService.ExternalSignInAsync(
-                request.Provider,
-                request.ProviderKey,
-                request.Email,
-                request.FirstName ?? "",
-                request.LastName ?? "");
+            var response = await work.ExternalLoginService.ExternalSignInAsync(request);
 
             if (!response.Success)
                 return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });

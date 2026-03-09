@@ -2,6 +2,7 @@ using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
 using DentalClinicProject.Infrastructure;
 using FluentValidation.AspNetCore;
+using Ganss.Xss;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -138,6 +139,8 @@ namespace DentalClinicProject.API
                 });
             });
 
+            builder.Services.AddSingleton<HtmlSanitizer>();
+
             var app = builder.Build();
             app.UseForwardedHeaders();
 
@@ -147,6 +150,7 @@ namespace DentalClinicProject.API
                 app.UseSwaggerUI();
                 app.MapOpenApi();
             }
+            app.UseMiddleware<ScriptInjectionMiddleware>();
             app.UseMiddleware<GlobalMiddlewareException>();
             app.UseHttpsRedirection();
             app.UseStaticFiles();

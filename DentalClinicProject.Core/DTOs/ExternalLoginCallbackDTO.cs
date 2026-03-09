@@ -1,6 +1,6 @@
 namespace DentalClinicProject.Core.DTOs
 {
-    public class ExternalLoginCallbackDTO
+    public record ExternalLoginCallbackDTO
     {
         public string Provider { get; set; } = null!;
         public string ProviderKey { get; set; } = null!;
