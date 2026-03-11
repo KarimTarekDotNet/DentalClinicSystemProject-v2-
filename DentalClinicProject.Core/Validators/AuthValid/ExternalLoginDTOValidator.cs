@@ -1,0 +1,29 @@
+using DentalClinicProject.Core.DTOs.Auth;
+using FluentValidation;
+
+namespace DentalClinicProject.Core.Validators.AuthValid
+{
+    public class ExternalLoginDTOValidator : AbstractValidator<ExternalLoginCallbackDTO>
+    {
+        public ExternalLoginDTOValidator()
+        {
+            RuleFor(x => x.Provider)
+                .NotEmpty().WithMessage("Provider is required.");
+
+            RuleFor(x => x.ProviderKey)
+                .NotEmpty().WithMessage("ProviderKey is required.");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required.")
+                .EmailAddress().WithMessage("Email must be a valid email address.");
+
+            RuleFor(x => x.FirstName)
+                .NotEmpty().WithMessage("First name is required.")
+                .MaximumLength(50).WithMessage("First name cannot exceed 50 characters.");
+
+            RuleFor(x => x.LastName)
+                .NotEmpty().WithMessage("Last name is required.")
+                .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.");
+        }
+    }
+}

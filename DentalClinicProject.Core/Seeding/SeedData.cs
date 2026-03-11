@@ -236,6 +236,19 @@
         public static readonly DateOnly Rate2CreatedDate = new(2024, 2, 6);
 
         // ========================
+        // CartItems Data
+        // ========================
+        public const int CartItem1Id = 1;
+        public const decimal CartItem1TotalPrice = 430m;
+        public const int CartItem1ItemCount = 2;
+        public static readonly DateOnly CartItem1CreatedDate = new(2024, 1, 20);
+
+        public const int CartItem2Id = 2;
+        public const decimal CartItem2TotalPrice = 165m;
+        public const int CartItem2ItemCount = 2;
+        public static readonly DateOnly CartItem2CreatedDate = new(2024, 1, 22);
+
+        // ========================
         // Doctor Settings
         // ========================
         public const decimal Doctor1Salary = 15000m;

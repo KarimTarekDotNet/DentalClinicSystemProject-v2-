@@ -25,5 +25,19 @@ namespace DentalClinicProject.Infrastructure.Utilities
         // Rate limiting
         public static string RateLimitEmail(string email) => $"User:{email}";
         public static string RateLimitPhone(string phone) => $"User:{phone}";
+        
+        // Product related keys
+        public static string ProductById(int productId) => $"product:{productId}:details";
+        public static string ProductsList() => "products:list";
+        
+        // Service related keys
+        public static string ServiceById(int serviceId) => $"service:{serviceId}";
+        public static string ServicesList() => "services:list";
+        
+        // Rate related keys
+        public static string RateById(int rateId) => $"rate:{rateId}:details";
+        public static string RateByAppointment(int appointmentId) => $"rate:appointment:{appointmentId}";
+        public static string DoctorAverageRating(int doctorId) => $"doctor:rating:{doctorId}";
+        public static string ProductAverageRating(int productId) => $"product:rating:{productId}";
     }
 }

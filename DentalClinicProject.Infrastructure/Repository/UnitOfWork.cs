@@ -17,17 +17,18 @@ namespace DentalClinicProject.Infrastructure.Repository
     public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<UnitOfWork> _logger;
+        private readonly UserManager<AppUser> _userManager;
 
         public UnitOfWork(ApplicationDbContext context, IConfiguration configuration, UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager, IConnectionMultiplexer connectionMultiplexer, IMapper mapper,
             IHttpContextAccessor httpContextAccessor, IMailService mailService, IPhoneService phoneService,
-            ILogger<UnitOfWork> logger, ILogger<AuthService> authLogger, ILogger<EmailVerificationService> emailLogger,
+            ILogger<AuthService> authLogger, ILogger<EmailVerificationService> emailLogger,
             ILogger<PhoneVerificationService> phoneLogger, ILogger<RedisService> redisLogger, ILogger<TokenService> tokenLogger,
             ILogger<ExternalLoginService> externalLoginLogger)
         {
             _context = context;
-            _logger = logger;
+            _userManager = userManager;
+
             RedisService = new RedisService(connectionMultiplexer, redisLogger);
             TokenService = new TokenService(context, configuration, userManager, httpContextAccessor, tokenLogger);
             AuthService = new AuthService(userManager, signInManager, mapper, TokenService, context,
@@ -37,8 +38,25 @@ namespace DentalClinicProject.Infrastructure.Repository
             PhoneVerificationService = new PhoneVerificationService(userManager, phoneService, RedisService, phoneLogger);
             ExternalLoginService = new ExternalLoginService(userManager, signInManager, TokenService,
             RedisService, context, httpContextAccessor, externalLoginLogger);
+            AppointmentRepository = new AppointmentRepository(context, userManager, mapper);
+            CartItemRepository = new CartItemRepository(context);
+            ProductRepository = new ProductRepository(context);
+            ServiceRepository = new ServiceRepository(context);
+            RateRepository = new RateRepository(context);
         }
 
+        // Repositories with lazy initialization
+        public IAppointmentRepository AppointmentRepository { get; }
+
+        public ICartItemRepository CartItemRepository { get; }
+
+        public IProductRepository ProductRepository { get; }
+
+        public IServiceRepository ServiceRepository { get; }
+
+        public IRateRepository RateRepository { get; }
+
+        // Services
         public ITokenService TokenService { get; }
         public IRedisService RedisService { get; }
         public IAuthService AuthService { get; }

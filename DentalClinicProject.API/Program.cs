@@ -1,6 +1,9 @@
 using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
+using DentalClinicProject.Core.Entities.Users;
+using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Infrastructure;
+using DentalClinicProject.Infrastructure.Repository;
 using FluentValidation.AspNetCore;
 using Ganss.Xss;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -32,6 +35,7 @@ namespace DentalClinicProject.API
             builder.Services.AddAutoMapper(op =>
             {
                 op.AddProfile<UserMapping>();
+                op.AddProfile<AppointmentMapping>();
             });
 
             builder.Services.AddSwaggerGen();

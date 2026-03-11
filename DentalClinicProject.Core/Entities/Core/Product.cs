@@ -6,5 +6,7 @@
         public string Description { get; set; } = null!;
         public decimal Price { get; set; }
         public Payment Payment { get; set; } = null!;
+        public int? CartItemId { get; set; }
+        public CartItem CartItem { get; set; } = null!;
     }
 }

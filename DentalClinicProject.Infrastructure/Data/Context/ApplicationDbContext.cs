@@ -10,6 +10,7 @@ namespace DentalClinicProject.Infrastructure.Data.Context
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Rate> Rates { get; set; }
@@ -32,6 +33,10 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .HasIndex(u => u.PhoneNumber)
                 .IsUnique()
                 .HasFilter("[PhoneNumber] IS NOT NULL"); // Only enforce uniqueness for non-null values
+
+            builder.Entity<Appointment>()
+                .HasIndex(a => new { a.DoctorId, a.ExaminationEppointment })
+                .IsUnique();
 
             // Configure Relationships
 
@@ -85,11 +90,11 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .HasForeignKey(a => a.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Service -> Appointments (One-to-One)
+            // Service -> Appointments (One-to-Many)
             builder.Entity<Appointment>()
                 .HasOne(a => a.Service)
-                .WithOne()
-                .HasForeignKey<Appointment>(a => a.ServiceId)
+                .WithMany()
+                .HasForeignKey(a => a.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Product -> Payment (One-to-One)
@@ -98,6 +103,14 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .WithOne(pay => pay.Product)
                 .HasForeignKey<Payment>(pay => pay.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // CartItem -> Products (One-to-Many)
+            builder.Entity<Product>()
+                .HasOne(p => p.CartItem)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CartItemId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
 
             // Rate -> Appointment (One-to-One)
             builder.Entity<Rate>()

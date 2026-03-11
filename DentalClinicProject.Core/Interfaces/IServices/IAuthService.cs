@@ -1,4 +1,5 @@
 ﻿using DentalClinicProject.Core.DTOs;
+using DentalClinicProject.Core.DTOs.Auth;
 using DentalClinicProject.Core.ViewModels;
 
 namespace DentalClinicProject.Core.Interfaces.IServices

@@ -100,8 +100,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.HasIndex("ServiceId")
-                        .IsUnique();
+                    b.HasIndex("ServiceId");
 
                     b.ToTable("Appointments");
 
@@ -123,6 +122,44 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             ExaminationEppointment = new DateTime(2024, 2, 5, 14, 0, 0, 0, DateTimeKind.Utc),
                             PatientId = 2,
                             ServiceId = 2
+                        });
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.CartItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("CreatedAt")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ItemCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CartItems");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateOnly(2024, 1, 20),
+                            ItemCount = 2,
+                            TotalPrice = 430m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateOnly(2024, 1, 22),
+                            ItemCount = 2,
+                            TotalPrice = 165m
                         });
                 });
 
@@ -211,6 +248,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CartItemId")
+                        .HasColumnType("int");
+
                     b.Property<DateOnly>("CreatedAt")
                         .HasColumnType("date");
 
@@ -226,6 +266,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CartItemId");
 
                     b.ToTable("Products");
 
@@ -921,8 +963,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("DentalClinicProject.Core.Entities.Core.Service", "Service")
-                        .WithOne()
-                        .HasForeignKey("DentalClinicProject.Core.Entities.Core.Appointment", "ServiceId")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -942,6 +984,16 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Product", b =>
+                {
+                    b.HasOne("DentalClinicProject.Core.Entities.Core.CartItem", "CartItem")
+                        .WithMany("Products")
+                        .HasForeignKey("CartItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("CartItem");
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Rate", b =>
@@ -1060,6 +1112,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.CartItem", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Product", b =>

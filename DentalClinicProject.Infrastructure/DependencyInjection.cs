@@ -1,7 +1,7 @@
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Core.Interfaces.IServices;
-using DentalClinicProject.Core.Validators;
+using DentalClinicProject.Core.Validators.AuthValid;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Repository;
 using DentalClinicProject.Infrastructure.Services.AuthHelper;

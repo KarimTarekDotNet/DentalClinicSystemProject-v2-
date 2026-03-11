@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using DentalClinicProject.Core.DTOs;
+using DentalClinicProject.Core.DTOs.Auth;
 using DentalClinicProject.Core.Entities.Users;
 
 namespace DentalClinicProject.API.Mapping

@@ -1,4 +1,4 @@
-using DentalClinicProject.Core.DTOs;
+using DentalClinicProject.Core.DTOs.Auth;
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Enum;
 using DentalClinicProject.Core.Interfaces.IServices;

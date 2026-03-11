@@ -1,6 +1,7 @@
 ﻿using DentalClinicProject.Core.Interfaces.IServices;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using System.Text.Json;
 
 namespace DentalClinicProject.Infrastructure.Services
 {
@@ -186,6 +187,109 @@ namespace DentalClinicProject.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking if token is blacklisted");
+                return false;
+            }
+        }
+
+        public async Task<T?> GetObjectAsync<T>(string key) where T : class
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    _logger.LogWarning("Redis GetObjectAsync failed: Key is empty");
+                    return null;
+                }
+
+                var value = await _database.StringGetAsync(key);
+                
+                if (value.HasValue)
+                {
+                    _logger.LogDebug("Redis key {Key} retrieved successfully", key);
+                    return JsonSerializer.Deserialize<T>(value.ToString());
+                }
+                else
+                {
+                    _logger.LogDebug("Redis key {Key} not found", key);
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Redis object for key {Key}", key);
+                return null;
+            }
+        }
+
+        public async Task<bool> SetObjectAsync<T>(string key, T value, TimeSpan expiry) where T : class
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    _logger.LogWarning("Redis SetObjectAsync failed: Key is empty");
+                    return false;
+                }
+
+                if (value == null)
+                {
+                    _logger.LogWarning("Redis SetObjectAsync failed: Value is null for key {Key}", key);
+                    return false;
+                }
+
+                if (expiry <= TimeSpan.Zero)
+                {
+                    _logger.LogWarning("Redis SetObjectAsync failed: Invalid expiry time for key {Key}", key);
+                    return false;
+                }
+
+                var serializedValue = JsonSerializer.Serialize(value);
+                var result = await _database.StringSetAsync(key, serializedValue, expiry);
+                
+                if (result)
+                {
+                    _logger.LogDebug("Redis object key {Key} set successfully with expiry {Expiry}", key, expiry);
+                }
+                else
+                {
+                    _logger.LogWarning("Redis SetObjectAsync failed for key {Key}", key);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Redis object for key {Key}", key);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteByPatternAsync(string pattern)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(pattern))
+                {
+                    _logger.LogWarning("Redis DeleteByPatternAsync failed: Pattern is empty");
+                    return false;
+                }
+
+                var server = _connectionMultiplexer.GetServer(_connectionMultiplexer.GetEndPoints().First());
+                var keys = server.Keys(pattern: pattern).ToArray();
+                
+                if (keys.Length > 0)
+                {
+                    await _database.KeyDeleteAsync(keys);
+                    _logger.LogDebug("Deleted {Count} keys matching pattern {Pattern}", keys.Length, pattern);
+                    return true;
+                }
+                
+                _logger.LogDebug("No keys found matching pattern {Pattern}", pattern);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting Redis keys by pattern {Pattern}", pattern);
                 return false;
             }
         }

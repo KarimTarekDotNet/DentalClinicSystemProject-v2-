@@ -1,10 +1,11 @@
-﻿using DentalClinicProject.Core.DTOs;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using DentalClinicProject.Core.DTOs.Core.Get;
+using DentalClinicProject.Core.Entities.Core;
 using DentalClinicProject.Core.Entities.Users;
+using DentalClinicProject.Core.Helpers;
 using DentalClinicProject.Core.Interfaces.IServices;
-using DentalClinicProject.Core.ViewModels;
 using DentalClinicProject.Infrastructure.Data.Context;
-using DentalClinicProject.Infrastructure.Services;
-using MailKit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,56 @@ namespace DentalClinicProject.Infrastructure.Utilities
 {
     public static class Helper
     {
+
+        public static IQueryable<Appointment> BaseQuery(ApplicationDbContext _context)
+        {
+            return _context.Appointments
+                .Include(a => a.Patient).ThenInclude(p => p.AppUser)
+                .Include(a => a.Doctor).ThenInclude(d => d.AppUser)
+                .Include(a => a.Service)
+                .AsNoTracking();
+        }
+
+        public static async Task<PagedResult<AppointmentDTO>> BuildAppointmentsQuery(IQueryable<Appointment> query,
+            PaginationParams param, ApplicationDbContext _context, IMapper _mapper)
+        {
+            if (!string.IsNullOrEmpty(param.SearchKeyword))
+            {
+                var searchTerm = $"%{param.SearchKeyword}%";
+
+                query = query.Where(c =>
+                    EF.Functions.Like(c.Patient.AppUser.FirstName, searchTerm) ||
+                    EF.Functions.Like(c.Patient.AppUser.LastName, searchTerm) ||
+                    EF.Functions.Like(c.Doctor.AppUser.FirstName, searchTerm) ||
+                    EF.Functions.Like(c.Doctor.AppUser.LastName, searchTerm) ||
+                    EF.Functions.Like(c.Service.Name, searchTerm));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            query = param.SortBy?.ToLower() switch
+            {
+                "price_asc" => query.OrderBy(c => c.Service.Price),
+                "price_desc" => query.OrderByDescending(c => c.Service.Price),
+                "created_asc" => query.OrderBy(c => c.CreatedAt),
+                "created_desc" => query.OrderByDescending(c => c.CreatedAt),
+                _ => query.OrderBy(c => c.Service.Name)
+            };
+
+            var items = await query
+                .Skip((param.PageNumber - 1) * param.PageSize)
+                .Take(param.PageSize)
+                .ProjectTo<AppointmentDTO>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return new PagedResult<AppointmentDTO>
+            {
+                Items = items,
+                PageNumber = param.PageNumber,
+                PageSize = param.PageSize,
+                TotalCount = totalCount
+            };
+        }
         public static string GenerateVerificationCode(int length = 6)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -107,7 +158,6 @@ namespace DentalClinicProject.Infrastructure.Utilities
             }
         }
 
-        public static AuthResult Fail(string message) => new AuthResult { Succeeded = false, Message = message };
         public static async Task<bool> CheckExists(string email, string username, UserManager<AppUser> userManager)
         {
             var existingEmail = await userManager.FindByEmailAsync(email);
@@ -118,45 +168,6 @@ namespace DentalClinicProject.Infrastructure.Utilities
                 return false;
 
             return true;
-        }
-
-        public static AuthResult Fail(IEnumerable<string> errors)
-        {
-            return new AuthResult
-            {
-                Succeeded = false,
-                Errors = errors.ToList(),
-                Message = "Operation failed"
-            };
-        }
-
-        public static async Task<IdentityResult> AddUserAsync(
-            UserManager<AppUser> userManager,
-            AppUser user,
-            string password,
-            string role,
-            ApplicationDbContext context)
-        {
-            var createResult = await userManager.CreateAsync(user, password);
-            if (!createResult.Succeeded)
-                return createResult;
-
-            var roleResult = await userManager.AddToRoleAsync(user, role);
-            if (!roleResult.Succeeded)
-                return roleResult;
-
-            if (role == "Doctor")
-            {
-                var doctor = new Doctor
-                {
-                    AppUserId = user.Id
-                };
-
-                await context.Doctors.AddAsync(doctor);
-                await context.SaveChangesAsync();
-            }
-
-            return IdentityResult.Success;
         }
     }
 }
