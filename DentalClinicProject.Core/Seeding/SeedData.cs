@@ -24,10 +24,10 @@
         public const string AdminNormalizedUserName = "ADMIN@DENTALCLINIC.COM";
         public const string AdminEmail = "admin@dentalclinic.com";
         public const string AdminNormalizedEmail = "ADMIN@DENTALCLINIC.COM";
-        public const string AdminFirstName = "Ahmed";
-        public const string AdminLastName = "Mohamed";
+        public const string AdminFirstName = "Admin";
+        public const string AdminLastName = "Dental";
         public const string AdminPassword = "Admin@123";
-        public const string AdminPasswordHash = "$2a$12$PIsynfBEoxgQeX.9b1NhK.42bvqcU4z0m6RdOJK1SobWfVPSsx1EO";
+        public const string AdminPasswordHash = "AQAAAAIAAYagAAAAEGorgtN1aWOwuhiQlRZuNa7oimeAFA8ZS+yb3u8Qc+C+x3MipZNNNIhOi5bl/1ws+Q==";
         public const string AdminProviderId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
         public const string AdminSecurityStamp = "QURNSU5TRUNVUklUWVNUQU1QMDA="; // Base64 of "ADMINSECURITYSTAMP00"
         public const string AdminConcurrencyStamp = "ADMIN-CONCURRENCY-001";
@@ -43,7 +43,7 @@
         public const string Doctor1FirstName = "Sarah";
         public const string Doctor1LastName = "Ali";
         public const string Doctor1Password = "Doctor@123";
-        public const string Doctor1PasswordHash = "$2a$12$ItcpdkqaPFmWpAG6LVkGKu8qUspXV7sz4phOKrdAPQtcVN/hPb.tK";
+        public const string Doctor1PasswordHash = "AQAAAAIAAYagAAAAEA6LlozjK/8AFKsEUcoc0URf8Kc3fYa8bLsw6H5+lOvxvwmCGU65CSzZYe3DiUlc1Q==";
         public const string Doctor1ProviderId = "b2c3d4e5-f6a7-8901-bcde-f12345678901";
         public const string Doctor1SecurityStamp = "RE9DVE9SMVNFQ1VSSVRZU1RBTVA="; // Base64 of "DOCTOR1SECURITYSTAMP"
         public const string Doctor1ConcurrencyStamp = "DOCTOR1-CONCURRENCY-001";
@@ -59,7 +59,7 @@
         public const string Doctor2FirstName = "Mahmoud";
         public const string Doctor2LastName = "Hassan";
         public const string Doctor2Password = "Doctor@123";
-        public const string Doctor2PasswordHash = "$2a$12$ItcpdkqaPFmWpAG6LVkGKu8qUspXV7sz4phOKrdAPQtcVN/hPb.tK";
+        public const string Doctor2PasswordHash = "AQAAAAIAAYagAAAAEIJreR46lGQQQ5gUg3tr2IJZisZshIYLvut+kz5WqIo2zwKjv9NYrZS9xHAhm1k8Bg==";
         public const string Doctor2ProviderId = "c3d4e5f6-a7b8-9012-cdef-123456789012";
         public const string Doctor2SecurityStamp = "RE9DVE9SMlNFQ1VSSVRZU1RBTVA="; // Base64 of "DOCTOR2SECURITYSTAMP"
         public const string Doctor2ConcurrencyStamp = "DOCTOR2-CONCURRENCY-001";
@@ -75,7 +75,7 @@
         public const string Patient1FirstName = "Fatima";
         public const string Patient1LastName = "Ahmed";
         public const string Patient1Password = "Patient@123";
-        public const string Patient1PasswordHash = "$2a$12$zFq7IDP.u8zUtqmlrBD55upoDjQFjAn9iPdRNfK95t0rg1fpIwh6S";
+        public const string Patient1PasswordHash = "AQAAAAIAAYagAAAAEJ/gwoGWiEdWFdk8LsAh1dfUvAu/9GGa3ebgbXpWPWhXjnsXRm0DQ8nLKq/yi55LcA==";
         public const string Patient1ProviderId = "d4e5f6a7-b8c9-0123-def1-234567890123";
         public const string Patient1SecurityStamp = "UEFUSUVOVDFTRUNTVVJJVFVTVEFNUA=="; // Base64 of "PATIENT1SECURITYSTAMP"
         public const string Patient1ConcurrencyStamp = "PATIENT1-CONCURRENCY-001";
@@ -91,7 +91,7 @@
         public const string Patient2FirstName = "Khaled";
         public const string Patient2LastName = "Abdullah";
         public const string Patient2Password = "Patient@123";
-        public const string Patient2PasswordHash = "$2a$12$zFq7IDP.u8zUtqmlrBD55upoDjQFjAn9iPdRNfK95t0rg1fpIwh6S";
+        public const string Patient2PasswordHash = "AQAAAAIAAYagAAAAEMk3DV11DFvB+aKgUbP3Q84O++hoXTi1I9ikkt+Via2Rr4VsZHLyvWWw9yUMRQghcg==";
         public const string Patient2ProviderId = "e5f6a7b8-c9d0-1234-ef12-345678901234";
         public const string Patient2SecurityStamp = "UEFUSUVOVDJTRUNTVVJJVFVTVEFNUA=="; // Base64 of "PATIENT2SECURITYSTAMP"
         public const string Patient2ConcurrencyStamp = "PATIENT2-CONCURRENCY-001";
@@ -107,7 +107,7 @@
         public const string RegularFirstName = "John";
         public const string RegularLastName = "Doe";
         public const string RegularPassword = "User@123";
-        public const string RegularPasswordHash = "$2a$12$vymAZaoE/iWWVCwN1Cp3DueGCpKrkt3QtrXosVVylxPFSJ31p7a7S";
+        public const string RegularPasswordHash = "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==";
         public const string RegularProviderId = "f6a7b8c9-d0e1-2345-f123-456789012345";
         public const string RegularSecurityStamp = "VVNFUlNFQ1VSSVRZU1RBTVA="; // Base64 of "USERSECURITYSTAMP"
         public const string RegularConcurrencyStamp = "USER-CONCURRENCY-001";

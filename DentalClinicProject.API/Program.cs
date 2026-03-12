@@ -2,8 +2,10 @@ using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IRepository;
+using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Infrastructure;
 using DentalClinicProject.Infrastructure.Repository;
+using DentalClinicProject.Infrastructure.Services;
 using FluentValidation.AspNetCore;
 using Ganss.Xss;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -37,6 +39,7 @@ namespace DentalClinicProject.API
                 op.AddProfile<UserMapping>();
                 op.AddProfile<AppointmentMapping>();
             });
+            builder.Services.AddSingleton<IRedisService, RedisService>();
 
             builder.Services.AddSwaggerGen();
 
@@ -156,6 +159,7 @@ namespace DentalClinicProject.API
             }
             app.UseMiddleware<ScriptInjectionMiddleware>();
             app.UseMiddleware<GlobalMiddlewareException>();
+            app.UseMiddleware<BlacklistTokenMiddleware>();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();

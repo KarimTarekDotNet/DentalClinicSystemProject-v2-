@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DentalClinicProject.Core.DTOs;
 using DentalClinicProject.Core.DTOs.Auth;
+using DentalClinicProject.Core.Entities.AuthModel;
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Core.ViewModels;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Logging;
 
 public class AuthService : IAuthService
 {
+    #region Objects
     private readonly IMailService _mailService;
     private readonly IPhoneService _phoneService;
     private readonly UserManager<AppUser> _userManager;
@@ -40,6 +42,7 @@ public class AuthService : IAuthService
         _mailService = mailService;
         _phoneService = phoneService;
     }
+    #endregion
 
     public async Task<ApiResponse<AuthResult>> Register(RegisterDTO dto)
     {
@@ -268,7 +271,32 @@ public class AuthService : IAuthService
                     _logger.LogWarning("Login failed: Email not verified for user {UserId}", user.Id);
                     return Fail(400, "Email not verified");
                 }
-                
+
+                var AdminRole = await _userManager.IsInRoleAsync(user, "Admin");
+                if(AdminRole)
+                {
+                    _logger.LogInformation("Admin user {UserId} logged in successfully", user.Id);
+                    var accessToken = await _tokenService.GenerateAccessToken(user);
+                    var refreshToken = _tokenService.GenerateRefreshToken();
+                    var refreshTokenRecord = await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+                    return new ApiResponse<AuthResult>
+                    {
+                        Success = true,
+                        StatusCode = 200,
+                        Message = "Login successful",
+                        Data = new AuthResult
+                        {
+                            Succeeded = true,
+                            UserId = user.Id,
+                            Email = user.Email,
+                            Username = user.UserName,
+                            Role = "Admin",
+                            Token = accessToken,
+                            RefreshToken = refreshToken
+                        }
+                    };
+                }
+
                 // Send verification code to email for 2FA
                 await Helper.SendVerificationEmailAsync(user.Email!, _redisService, _mailService, _logger);
                 _logger.LogInformation("2FA code sent to email for user {UserId}", user.Id);
@@ -348,80 +376,30 @@ public class AuthService : IAuthService
         {
             _logger.LogInformation("Logout attempt for user: {UserId}", userId);
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    StatusCode = 400,
-                    Message = "UserId is required"
-                };
-            }
-
-            if (string.IsNullOrWhiteSpace(accessToken))
-            {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    StatusCode = 400,
-                    Message = "Access token is required"
-                };
-            }
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(accessToken))
+                return new ApiResponse<bool> { Success = false, StatusCode = 400, Message = "UserId and access token are required" };
 
             var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
-            
-            // Try to get user from Redis first
-            string userCacheKey = RedisKeys.UserById(userId);
-            var cachedUserId = await _redisService.GetAsync(userCacheKey);
-            
-            AppUser? user = null;
-            if (!string.IsNullOrEmpty(cachedUserId))
-            {
-                _logger.LogInformation("User found in Redis cache for logout");
-                user = await _userManager.FindByIdAsync(userId);
-            }
-            else
-            {
-                _logger.LogInformation("User not in cache, fetching from database");
-                user = await _userManager.FindByIdAsync(userId);
-                
-                if (user != null)
-                {
-                    // Cache user for future operations (24 hours)
-                    await _redisService.SetAsync(userCacheKey, user.Id, TimeSpan.FromHours(24));
-                }
-            }
 
-            if (user == null)
-            {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    StatusCode = 400,
-                    Message = "User not found"
-                };
-            }
-
-            // Blacklist access token in Redis for 30 minutes
+            // Blacklist current access token
             var blacklistKey = RedisKeys.BlacklistedAccessToken(userId, accessToken);
             await _redisService.SetAsync(blacklistKey, "blacklisted", TimeSpan.FromMinutes(30));
 
-            // Try to get and delete refresh token from Redis
-            string refreshKey = RedisKeys.RefreshToken(userId, ipAddress);
-            var cachedRefreshToken = await _redisService.GetAsync(refreshKey);
-            
-            if (!string.IsNullOrEmpty(cachedRefreshToken))
+            // Revoke all refresh tokens for this user on this IP
+            var tokens = await _context.RefreshTokens
+                .Where(t => t.UserId == userId && !t.IsRevoked)
+                .ToListAsync();
+
+            foreach (var token in tokens)
             {
-                _logger.LogInformation("Refresh token found in Redis, deleting from cache");
-                await _redisService.DeleteAsync(refreshKey);
+                token.Revoke(ipAddress, "Logout");
+                // Remove from Redis
+                string redisKey = RedisKeys.RefreshToken(userId, token.Id.ToString());
+                await _redisService.DeleteAsync(redisKey);
             }
 
-            // Revoke refresh token from database
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.UserId == userId && !x.IsRevoked);
-            if (token != null)
-            {
-                await _tokenService.RevokeUserTokensAsync(token.Id, userId, ipAddress, "Logout");
-            }
+            _context.RefreshTokens.RemoveRange(tokens);
+            await _context.SaveChangesAsync();
 
             _logger.LogInformation("User {UserId} logged out successfully", userId);
 
@@ -436,66 +414,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during logout for user {UserId}", userId);
-
-            return new ApiResponse<bool>
-            {
-                Success = false,
-                StatusCode = 500,
-                Message = "An error occurred during logout"
-            };
-        }
-    }
-
-    public async Task<ApiResponse<bool>> LogoutAllAsync(string userId, string accessToken)
-    {
-        try
-        {
-            _logger.LogInformation("Logout all sessions attempt for user: {UserId}", userId);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    StatusCode = 400,
-                    Message = "UserId is required"
-                };
-            }
-
-            if (string.IsNullOrWhiteSpace(accessToken))
-            {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    StatusCode = 400,
-                    Message = "Access token is required"
-                };
-            }
-
-            var key = $"{userId}:{accessToken}";
-            await _redisService.SetAsync(key, "blacklisted", TimeSpan.FromMinutes(30));
-
-            var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
-            await _tokenService.RevokeAllUserTokensAsync(userId, ipAddress, "LogoutAll");
-
-            return new ApiResponse<bool>
-            {
-                Success = true,
-                StatusCode = 200,
-                Message = "Logged out from all sessions successfully",
-                Data = true
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during logout all for user {UserId}", userId);
-
-            return new ApiResponse<bool>
-            {
-                Success = false,
-                StatusCode = 500,
-                Message = "An error occurred during logout all"
-            };
+            return new ApiResponse<bool> { Success = false, StatusCode = 500, Message = "An error occurred during logout" };
         }
     }
 
@@ -620,33 +539,44 @@ public class AuthService : IAuthService
     {
         try
         {
-            var refreshToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(r => r.Token == dto.RefreshToken);
+            var refreshToken = (await _context.RefreshTokens.ToListAsync())
+                               .FirstOrDefault(r => r.Token == dto.RefreshToken && r.IsActive);
 
-            if (refreshToken == null || !refreshToken.IsActive)
+            if (refreshToken == null)
                 return Fail(404, "Invalid or expired refresh token");
 
             var user = await _userManager.FindByIdAsync(refreshToken.UserId);
             if (user == null)
                 return Fail(404, "User not found");
 
+            var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
+
+            refreshToken.Revoke(ipAddress, "Refresh");
+            string oldRedisKey = RedisKeys.RefreshToken(user.Id, refreshToken.Id.ToString());
+            await _redisService.DeleteAsync(oldRedisKey);
+            await _context.SaveChangesAsync();
+
             var newAccessToken = await _tokenService.GenerateAccessToken(user);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-            var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
-            refreshToken.Revoke(ipAddress, "Refresh");
-
-            var savedRefresh = await _tokenService.SaveRefreshTokenAsync(user.Id, newRefreshToken);
+            var savedRefresh = new RefreshToken
+            {
+                UserId = user.Id,
+                Token = newRefreshToken,
+                ExpiryDate = DateTime.UtcNow.AddDays(15),
+                CreatedByIp = ipAddress
+            };
+            await _context.RefreshTokens.AddAsync(savedRefresh);
             await _context.SaveChangesAsync();
 
-            var redisKey = RedisKeys.RefreshToken(user.Id, savedRefresh.Id.ToString());
-            await _redisService.SetAsync(redisKey, newRefreshToken, TimeSpan.FromDays(15));
+            var newRedisKey = RedisKeys.RefreshToken(user.Id, savedRefresh.Id.ToString());
+            await _redisService.SetAsync(newRedisKey, newRefreshToken, TimeSpan.FromDays(15));
 
             var roles = await _userManager.GetRolesAsync(user);
 
             _logger.LogInformation("Token refreshed for user {UserId}", user.Id);
 
-            var result = new ApiResponse<AuthResult>
+            return new ApiResponse<AuthResult>
             {
                 Success = true,
                 StatusCode = 200,
@@ -662,12 +592,11 @@ public class AuthService : IAuthService
                     Role = roles.FirstOrDefault() ?? string.Empty
                 }
             };
-            return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing token");
-            return Fail(404, "An error occurred while refreshing token");
+            return Fail(500, "An error occurred while refreshing token");
         }
     }
 

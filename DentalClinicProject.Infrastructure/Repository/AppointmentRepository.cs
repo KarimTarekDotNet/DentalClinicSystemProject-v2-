@@ -7,6 +7,7 @@ using DentalClinicProject.Core.Entities.Core;
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Helpers;
 using DentalClinicProject.Core.Interfaces.IRepository;
+using DentalClinicProject.Core.ViewModels;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Utilities;
 using Microsoft.AspNetCore.Identity;
@@ -20,7 +21,12 @@ namespace DentalClinicProject.Infrastructure.Repository
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
 
-        public AppointmentRepository(ApplicationDbContext context,
+        private const int WorkingHoursStart = 9;
+        private const int WorkingHoursEnd = 17;
+        private const int ConflictWindowHours = 1;
+
+        public AppointmentRepository(
+            ApplicationDbContext context,
             UserManager<AppUser> userManager,
             IMapper mapper)
         {
@@ -76,13 +82,14 @@ namespace DentalClinicProject.Infrastructure.Repository
 
         public async Task<bool> CanBookAppointmentAsync(CreateAppointmentDTO dto, int patientId)
         {
-            if (dto.ExaminationAppointment.DayOfWeek == DayOfWeek.Friday)
+            var patientExists = await _context.Appointments
+                .AsNoTracking()
+                .AnyAsync(a => a.PatientId == patientId);
+
+            if (!patientExists)
                 return false;
 
-            if (dto.ExaminationAppointment <= DateTime.UtcNow)
-                return false;
-
-            if (dto.ExaminationAppointment.Hour < 9 || dto.ExaminationAppointment.Hour >= 17)
+            if (!IsValidAppointmentTime(dto.ExaminationAppointment))
                 return false;
 
             var doctor = await _context.Doctors
@@ -93,6 +100,7 @@ namespace DentalClinicProject.Infrastructure.Repository
                 return false;
 
             var appointmentsOnDate = await _context.Appointments
+                .AsNoTracking()
                 .CountAsync(a =>
                     a.DoctorId == dto.DoctorId &&
                     a.ExaminationEppointment.Date == dto.ExaminationAppointment.Date);
@@ -107,18 +115,16 @@ namespace DentalClinicProject.Infrastructure.Repository
                 return false;
 
             var serviceExists = await _context.Services
+                .AsNoTracking()
                 .AnyAsync(s => s.Id == dto.ServiceId);
 
-            if (!serviceExists)
-                return false;
-
-            return true;
+            return serviceExists;
         }
 
         public async Task<bool> HasConflictingAppointmentAsync(int doctorId, DateTime appointmentTime, int? excludeAppointmentId = null)
         {
-            var start = appointmentTime.AddHours(-1);
-            var end = appointmentTime.AddHours(1);
+            var start = appointmentTime.AddHours(-ConflictWindowHours);
+            var end = appointmentTime.AddHours(ConflictWindowHours);
 
             var query = _context.Appointments
                 .Where(a =>
@@ -127,17 +133,15 @@ namespace DentalClinicProject.Infrastructure.Repository
                     a.ExaminationEppointment < end);
 
             if (excludeAppointmentId.HasValue)
-            {
                 query = query.Where(a => a.Id != excludeAppointmentId.Value);
-            }
 
             return await query.AnyAsync();
         }
 
         public async Task<bool> HasPatientConflictAsync(int patientId, DateTime appointmentTime, int? excludeAppointmentId = null)
         {
-            var start = appointmentTime.AddHours(-1);
-            var end = appointmentTime.AddHours(1);
+            var start = appointmentTime.AddHours(-ConflictWindowHours);
+            var end = appointmentTime.AddHours(ConflictWindowHours);
 
             var query = _context.Appointments
                 .Where(a =>
@@ -146,9 +150,7 @@ namespace DentalClinicProject.Infrastructure.Repository
                     a.ExaminationEppointment < end);
 
             if (excludeAppointmentId.HasValue)
-            {
                 query = query.Where(a => a.Id != excludeAppointmentId.Value);
-            }
 
             return await query.AnyAsync();
         }
@@ -157,42 +159,32 @@ namespace DentalClinicProject.Infrastructure.Repository
 
         #region CRUD Operations
 
-        public async Task<AppointmentDTO> CreateAppointmentAsync(CreateAppointmentDTO dto, int patientId)
+        public async Task<AppointmentDTO> CreateAppointmentAsync(CreateAppointmentDTO dto)
         {
-            if (!await CanBookAppointmentAsync(dto, patientId))
-                throw new InvalidOperationException("Cannot book appointment with the provided details.");
+            if (!await CanBookAppointmentAsync(dto, dto.PatientId))
+                throw new InvalidOperationException("Unable to book the appointment. Please verify the doctor availability, working hours (9 AM–5 PM), and that the selected date is not a Friday.");
 
             var patient = await _context.Patients
                 .Include(p => p.AppUser)
-                .FirstOrDefaultAsync(p => p.Id == patientId);
-
-            if (patient == null)
-                throw new InvalidOperationException("Patient not found.");
+                .FirstOrDefaultAsync(p => p.Id == dto.PatientId)
+                ?? throw new InvalidOperationException($"No patient found with ID {dto.PatientId}.");
 
             var doctor = await _context.Doctors
-                .FirstOrDefaultAsync(d => d.Id == dto.DoctorId);
+                .FirstOrDefaultAsync(d => d.Id == dto.DoctorId)
+                ?? throw new InvalidOperationException($"No doctor found with ID {dto.DoctorId}.");
 
-            if (doctor == null)
-                throw new InvalidOperationException("Doctor not found.");
+            var service = await _context.Services
+                .FirstOrDefaultAsync(s => s.Id == dto.ServiceId)
+                ?? throw new InvalidOperationException($"No service found with ID {dto.ServiceId}.");
 
-            var serviceExists = await _context.Services
-                .AnyAsync(s => s.Id == dto.ServiceId);
-
-            if (!serviceExists)
-                throw new InvalidOperationException("Service not found.");
-
-            var user = patient.AppUser;
-
-            if (!await _userManager.IsInRoleAsync(user, "Patient"))
-            {
-                await _userManager.AddToRoleAsync(user, "Patient");
-            }
+            if (!await _userManager.IsInRoleAsync(patient.AppUser, "Patient"))
+                await _userManager.AddToRoleAsync(patient.AppUser, "Patient");
 
             var appointment = new Appointment
             {
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                ServiceId = dto.ServiceId,
+                ServiceId = service.Id,
                 ExaminationEppointment = dto.ExaminationAppointment,
                 CreatedAt = DateOnly.FromDateTime(DateTime.UtcNow)
             };
@@ -200,7 +192,8 @@ namespace DentalClinicProject.Infrastructure.Repository
             await _context.Appointments.AddAsync(appointment);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<AppointmentDTO>(appointment);
+            var createdAppointment = await GetAppointmentWithIncludesAsync(appointment.Id);
+            return _mapper.Map<AppointmentDTO>(createdAppointment);
         }
 
         public async Task<bool> CancelAppointmentAsync(int id)
@@ -217,78 +210,127 @@ namespace DentalClinicProject.Infrastructure.Repository
             return true;
         }
 
-        public async Task<bool> UpdateAppointmentAsync(int id, UpdateAppointmentDTO dto)
+        public async Task<ApiResponse<AppointmentDTO>> UpdateAppointmentAsync(UpdateAppointmentDTO dto)
         {
             var appointment = await _context.Appointments
-                .FirstOrDefaultAsync(a => a.Id == id);
+                .FirstOrDefaultAsync(a => a.Id == dto.Id);
 
             if (appointment == null)
-                return false;
+                return Fail("No appointment found with the provided ID.");
 
-            if (dto.DoctorId.HasValue && dto.DoctorId.Value != appointment.DoctorId)
+            var newDoctorId = dto.DoctorId ?? appointment.DoctorId;
+            var newServiceId = dto.ServiceId ?? appointment.ServiceId;
+            var newDate = dto.ExaminationAppointment ?? appointment.ExaminationEppointment;
+
+            if (newDoctorId != appointment.DoctorId)
             {
                 var doctor = await _context.Doctors
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(d => d.Id == dto.DoctorId.Value);
+                    .FirstOrDefaultAsync(d => d.Id == newDoctorId);
 
-                if (doctor == null || !doctor.IsApproved)
-                    return false;
+                if (doctor == null)
+                    return Fail($"No doctor found with ID {newDoctorId}.");
 
-                appointment.DoctorId = dto.DoctorId.Value;
+                if (!doctor.IsApproved)
+                    return Fail("The selected doctor has not been approved yet.");
             }
 
-            if (dto.ServiceId.HasValue && dto.ServiceId.Value != appointment.ServiceId)
+            if (newServiceId != appointment.ServiceId)
             {
                 var serviceExists = await _context.Services
-                    .AnyAsync(s => s.Id == dto.ServiceId.Value);
+                    .AnyAsync(s => s.Id == newServiceId);
 
                 if (!serviceExists)
-                    return false;
-
-                appointment.ServiceId = dto.ServiceId.Value;
+                    return Fail($"No service found with ID {newServiceId}.");
             }
 
-            if (dto.ExaminationAppointment.HasValue &&
-                dto.ExaminationAppointment.Value != appointment.ExaminationEppointment)
+            if (newDate != appointment.ExaminationEppointment)
             {
-                var newDate = dto.ExaminationAppointment.Value;
-
-                if (newDate.DayOfWeek == DayOfWeek.Friday)
-                    return false;
-
-                if (newDate <= DateTime.UtcNow)
-                    return false;
-
-                if (newDate.Hour < 9 || newDate.Hour >= 17)
-                    return false;
-
-                if (await HasConflictingAppointmentAsync(appointment.DoctorId, newDate, id))
-                    return false;
-
-                if (await HasPatientConflictAsync(appointment.PatientId, newDate, id))
-                    return false;
-
-                var doctorCapacity = await _context.Doctors
-                    .Where(d => d.Id == appointment.DoctorId)
-                    .Select(d => d.CapactiyOfDay)
-                    .FirstAsync();
-
-                var appointmentsOnNewDate = await _context.Appointments
-                    .CountAsync(a =>
-                        a.DoctorId == appointment.DoctorId &&
-                        a.ExaminationEppointment.Date == newDate.Date &&
-                        a.Id != id);
-
-                if (appointmentsOnNewDate >= doctorCapacity)
-                    return false;
-
-                appointment.ExaminationEppointment = newDate;
+                var dateValidationError = await 
+                    ValidateAppointmentDateAsync(newDoctorId, newDate, appointment.PatientId, dto.Id);
+                if (dateValidationError != null)
+                    return Fail(dateValidationError);
             }
+
+            appointment.DoctorId = newDoctorId;
+            appointment.ServiceId = newServiceId;
+            appointment.ExaminationEppointment = newDate;
 
             await _context.SaveChangesAsync();
 
+            var updatedAppointment = await GetAppointmentWithIncludesAsync(appointment.Id);
+
+            return new ApiResponse<AppointmentDTO>
+            {
+                Success = true,
+                Message = "Appointment updated successfully.",
+                Data = _mapper.Map<AppointmentDTO>(updatedAppointment)
+            };
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        private static bool IsValidAppointmentTime(DateTime appointmentTime)
+        {
+            if (appointmentTime.DayOfWeek == DayOfWeek.Friday)
+                return false;
+
+            if (appointmentTime <= DateTime.UtcNow)
+                return false;
+
+            if (appointmentTime.Hour < WorkingHoursStart || appointmentTime.Hour >= WorkingHoursEnd)
+                return false;
+
             return true;
         }
+
+        private async Task<string?> ValidateAppointmentDateAsync(int doctorId, DateTime newDate, int patientId, int excludeAppointmentId)
+        {
+            if (newDate.DayOfWeek == DayOfWeek.Friday)
+                return "Appointments cannot be scheduled on Fridays.";
+
+            if (newDate <= DateTime.UtcNow)
+                return "Appointment date must be set in the future.";
+
+            if (newDate.Hour < WorkingHoursStart || newDate.Hour >= WorkingHoursEnd)
+                return $"Appointments are only available between {WorkingHoursStart}:00 AM and {WorkingHoursEnd - 12}:00 PM.";
+
+            if (await HasConflictingAppointmentAsync(doctorId, newDate, excludeAppointmentId))
+                return "The doctor already has another appointment within an hour of this time.";
+
+            if (await HasPatientConflictAsync(patientId, newDate, excludeAppointmentId))
+                return "The patient already has another appointment within an hour of this time.";
+
+            var doctorCapacity = await _context.Doctors
+                .Where(d => d.Id == doctorId)
+                .Select(d => d.CapactiyOfDay)
+                .FirstAsync();
+
+            var appointmentsOnDate = await _context.Appointments
+                .CountAsync(a =>
+                    a.DoctorId == doctorId &&
+                    a.ExaminationEppointment.Date == newDate.Date &&
+                    a.Id != excludeAppointmentId);
+
+            if (appointmentsOnDate >= doctorCapacity)
+                return "The doctor has reached the maximum appointment capacity for this day.";
+
+            return null;
+        }
+
+        private async Task<Appointment?> GetAppointmentWithIncludesAsync(int appointmentId)
+        {
+            return await _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d.AppUser)
+                .Include(a => a.Patient).ThenInclude(p => p.AppUser)
+                .Include(a => a.Service)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+        }
+
+        private static ApiResponse<AppointmentDTO> Fail(string message) =>
+            new() { Success = false, Message = message };
 
         #endregion
     }

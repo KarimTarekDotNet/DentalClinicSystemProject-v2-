@@ -280,7 +280,7 @@ namespace DentalClinicProject.Infrastructure.Services.AuthHelper
                 }
                 else
                 {
-                    await context.RefreshTokens.AddAsync(new RefreshToken { UserId = userId, Token = refreshToken });
+                    await context.RefreshTokens.AddAsync(refreshTokenRecord);
                 }
                 await context.SaveChangesAsync();
 

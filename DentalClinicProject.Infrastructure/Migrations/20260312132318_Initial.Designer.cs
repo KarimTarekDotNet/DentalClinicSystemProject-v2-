@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260311133814_initial")]
-    partial class initial
+    [Migration("20260312132318_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -99,11 +99,12 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorId");
-
                     b.HasIndex("PatientId");
 
                     b.HasIndex("ServiceId");
+
+                    b.HasIndex("DoctorId", "ExaminationEppointment")
+                        .IsUnique();
 
                     b.ToTable("Appointments");
 

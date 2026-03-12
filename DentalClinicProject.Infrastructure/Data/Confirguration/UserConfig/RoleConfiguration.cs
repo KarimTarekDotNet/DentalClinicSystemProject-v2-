@@ -41,4 +41,17 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.UserConfig
             );
         }
     }
+    public class UserRoleConfiguration : IEntityTypeConfiguration<IdentityUserRole<string>>
+    {
+        public void Configure(EntityTypeBuilder<IdentityUserRole<string>> builder)
+        {
+            builder.HasData(
+                new IdentityUserRole<string>
+                {
+                    UserId = SeedData.AdminUserId,
+                    RoleId = "role-admin"
+                }
+            );
+        }
+    }
 }

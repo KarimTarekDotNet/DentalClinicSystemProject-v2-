@@ -75,17 +75,6 @@ namespace DentalClinicProject.API.Controllers.Auth
 
             return StatusCode(response.StatusCode, response);
         }
-        [HttpPost("logout-all")]
-        public async Task<IActionResult> LogoutAllAsync()
-        {
-            var userId = User.FindFirst("uid")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var response = await work.AuthService.LogoutAllAsync(userId!, accessToken);
-            if (!response.Success)
-                return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
-
-            return StatusCode(response.StatusCode, response);
-        }
 
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDTO dto)

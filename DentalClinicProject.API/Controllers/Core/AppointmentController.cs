@@ -3,8 +3,8 @@ using DentalClinicProject.Core.DTOs.Core.Create;
 using DentalClinicProject.Core.DTOs.Core.Update;
 using DentalClinicProject.Core.Helpers;
 using DentalClinicProject.Core.Interfaces.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace DentalClinicProject.API.Controllers.Core
 {
@@ -13,80 +13,83 @@ namespace DentalClinicProject.API.Controllers.Core
         public AppointmentController(IUnitOfWork work, IMapper mapper) : base(work, mapper) { }
 
         #region Get Controllers
+
+        [Authorize(Roles = "Admin")]
         [HttpGet("get-appointments")]
         public async Task<IActionResult> GetAppointments([FromQuery] PaginationParams param)
         {
             try
             {
                 var result = await work.AppointmentRepository.GetAppointmentsWithDetailsAsync(param);
-                return Ok(new
-                {
-                    success = true,
-                    data = result
-                });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while retrieving appointments.",
                     error = ex.Message
                 });
             }
         }
-        [HttpGet("get-appointments-with-doctorId")]
+
+        [Authorize(Roles = "Admin,Doctor")]
+        [HttpGet("get-appointments-by-doctor")]
         public async Task<IActionResult> GetDoctorAppointmentsAsync(int doctorId, [FromQuery] PaginationParams param)
         {
             try
             {
                 var result = await work.AppointmentRepository.GetDoctorAppointmentsAsync(doctorId, param);
-                if (result == null)
-                    return NotFound("Appointment or doctor not found");
 
-                return Ok(new
-                {
-                    success = true,
-                    data = result
-                });
+                if (result == null)
+                    return NotFound(new { success = false, message = $"No appointments found for doctor with ID {doctorId}." });
+
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while retrieving doctor appointments.",
                     error = ex.Message
                 });
             }
         }
 
-        [HttpGet("get-appointments-with-patientId")]
-        public async Task<IActionResult> GetPatientAppointmentsAsync(int patientId, PaginationParams param)
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpGet("get-appointments-by-patient")]
+        public async Task<IActionResult> GetPatientAppointmentsAsync(int patientId, [FromQuery] PaginationParams param)
         {
             try
             {
                 var result = await work.AppointmentRepository.GetPatientAppointmentsAsync(patientId, param);
-                if (result == null)
-                    return NotFound("Appointment or doctor not found");
 
-                return Ok(new
+                if (result == null)
+                    return NotFound(new { success = false, message = $"No appointments found for patient with ID {patientId}." });
+
+                if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
                 {
-                    success = true,
-                    data = result
-                });
+                    var firstAppointment = result.Items?.FirstOrDefault();
+                    if (firstAppointment == null || firstAppointment.PatientAppUserId != GetCurrentUid())
+                        return Forbid();
+                }
+
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while retrieving patient appointments.",
                     error = ex.Message
                 });
             }
         }
 
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("get-by-id")]
         public async Task<IActionResult> GetAppointmentWithDetailsAsync([FromQuery] int id)
         {
@@ -95,107 +98,141 @@ namespace DentalClinicProject.API.Controllers.Core
                 var result = await work.AppointmentRepository.GetAppointmentWithDetailsAsync(id);
 
                 if (result == null)
-                    return NotFound("Appointment not found");
+                    return NotFound(new { success = false, message = $"No appointment found with ID {id}." });
 
-                return Ok(new
+                if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
                 {
-                    success = true,
-                    data = result
-                });
+                    if (result.PatientAppUserId != GetCurrentUid())
+                        return Forbid();
+                }
+
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while retrieving the appointment.",
                     error = ex.Message
                 });
             }
         }
+
         #endregion
 
         #region Edit Controllers
 
-        [HttpPost("create-appiontment")]
-        public async Task<IActionResult> CreateAppointmentAsync(CreateAppointmentDTO dto, int patientId)
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpPost("create-appointment")]
+        public async Task<IActionResult> CreateAppointmentAsync([FromBody] CreateAppointmentDTO dto)
         {
             try
             {
-                var result = await work.AppointmentRepository.CreateAppointmentAsync(dto, patientId);
+                var result = await work.AppointmentRepository.CreateAppointmentAsync(dto);
 
                 if (result == null)
-                    return BadRequest("Appointment not created successfully");
+                    return BadRequest(new { success = false, message = "Failed to create the appointment." });
 
-                return Ok(new
+                if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
                 {
-                    success = true,
-                    data = result
-                });
+                    if (result.PatientAppUserId != GetCurrentUid())
+                        return Forbid();
+                }
+
+                return Ok(new { success = true, data = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while creating the appointment.",
                     error = ex.Message
                 });
             }
         }
 
-        [HttpPut("update-appiontment")]
-        public async Task<IActionResult> UpdateAppointmentAsync(int id, UpdateAppointmentDTO dto)
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpPut("update-appointment")]
+        public async Task<IActionResult> UpdateAppointmentAsync([FromBody] UpdateAppointmentDTO dto)
         {
             try
             {
-                var result = await work.AppointmentRepository.UpdateAppointmentAsync(id, dto);
-
-                if (!result)
-                    return BadRequest("Appointment not created successfully");
-
-                var updatedAppointment = await work.AppointmentRepository.GetAppointmentWithDetailsAsync(id);
-                return Ok(new
+                if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
                 {
-                    success = true,
-                    data = updatedAppointment
-                });
+                    var appointment = await work.AppointmentRepository.GetAppointmentWithDetailsAsync(dto.Id);
+
+                    if (appointment == null)
+                        return NotFound(new { success = false, message = $"No appointment found with ID {dto.Id}." });
+
+                    if (appointment.PatientAppUserId != GetCurrentUid())
+                        return Forbid();
+                }
+
+                var result = await work.AppointmentRepository.UpdateAppointmentAsync(dto);
+
+                if (!result.Success)
+                    return BadRequest(new { success = false, message = result.Message });
+
+                return Ok(new { success = true, message = result.Message, data = result.Data });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while updating the appointment.",
                     error = ex.Message
                 });
             }
         }
-        [HttpDelete("cancel-appiontment")]
-        public async Task<IActionResult> CancelAppointmentAsync(int id)
+
+        [Authorize(Roles = "Admin,Patient")]
+        [HttpDelete("cancel-appointment")]
+        public async Task<IActionResult> CancelAppointmentAsync([FromQuery] int id)
         {
             try
             {
+                if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
+                {
+                    var appointment = await work.AppointmentRepository.GetAppointmentWithDetailsAsync(id);
+
+                    if (appointment == null)
+                        return NotFound(new { success = false, message = $"No appointment found with ID {id}." });
+
+                    if (appointment.PatientAppUserId != GetCurrentUid())
+                        return Forbid();
+                }
+
                 var result = await work.AppointmentRepository.CancelAppointmentAsync(id);
 
                 if (!result)
-                    return BadRequest("Appointment not created successfully");
+                    return NotFound(new { success = false, message = $"No appointment found with ID {id}." });
 
-                return Ok(new
-                {
-                    success = true,
-                });
+                return Ok(new { success = true, message = "Appointment cancelled successfully." });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "An error occurred while retrieving appointments",
+                    message = "An error occurred while cancelling the appointment.",
                     error = ex.Message
                 });
             }
         }
+
+        #endregion
+
+        #region Private Helpers
+
+        private string? GetCurrentUid() =>
+            User.FindFirst("uid")?.Value;
 
         #endregion
     }

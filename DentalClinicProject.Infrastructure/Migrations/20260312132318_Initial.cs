@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -525,9 +525,10 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Appointments_DoctorId",
+                name: "IX_Appointments_DoctorId_ExaminationEppointment",
                 table: "Appointments",
-                column: "DoctorId");
+                columns: new[] { "DoctorId", "ExaminationEppointment" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_PatientId",

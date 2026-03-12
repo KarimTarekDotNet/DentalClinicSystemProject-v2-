@@ -4,6 +4,7 @@
     {
         User,
         Patient,
-        Doctor
+        Doctor,
+        Admin
     }
 }
