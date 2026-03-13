@@ -4,6 +4,7 @@ using DentalClinicProject.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260313195753_EditSeedData")]
+    partial class EditSeedData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,13 +146,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("CartItems");
 
@@ -159,16 +156,14 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             Id = 1,
                             CreatedAt = new DateOnly(2024, 1, 20),
                             ItemCount = 2,
-                            TotalPrice = 430m,
-                            UserId = "patient-1"
+                            TotalPrice = 430m
                         },
                         new
                         {
                             Id = 2,
                             CreatedAt = new DateOnly(2024, 1, 22),
                             ItemCount = 2,
-                            TotalPrice = 165m,
-                            UserId = "user-1"
+                            TotalPrice = 165m
                         });
                 });
 
@@ -993,17 +988,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Service");
-                });
-
-            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.CartItem", b =>
-                {
-                    b.HasOne("DentalClinicProject.Core.Entities.Users.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Payment", b =>

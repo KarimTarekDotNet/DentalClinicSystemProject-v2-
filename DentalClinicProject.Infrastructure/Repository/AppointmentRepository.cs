@@ -82,9 +82,9 @@ namespace DentalClinicProject.Infrastructure.Repository
 
         public async Task<bool> CanBookAppointmentAsync(CreateAppointmentDTO dto, int patientId)
         {
-            var patientExists = await _context.Appointments
+            var patientExists = await _context.Patients
                 .AsNoTracking()
-                .AnyAsync(a => a.PatientId == patientId);
+                .AnyAsync(a => a.Id == patientId);
 
             if (!patientExists)
                 return false;
@@ -202,6 +202,12 @@ namespace DentalClinicProject.Infrastructure.Repository
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (appointment == null)
+                return false;
+
+            if (appointment.ExaminationEppointment <= DateTime.UtcNow)
+                return false;
+
+            if (appointment.ExaminationEppointment - DateTime.UtcNow <= TimeSpan.FromHours(24))
                 return false;
 
             _context.Appointments.Remove(appointment);

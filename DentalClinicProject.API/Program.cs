@@ -1,10 +1,7 @@
 using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
-using DentalClinicProject.Core.Entities.Users;
-using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Infrastructure;
-using DentalClinicProject.Infrastructure.Repository;
 using DentalClinicProject.Infrastructure.Services;
 using FluentValidation.AspNetCore;
 using Ganss.Xss;
@@ -24,86 +21,99 @@ namespace DentalClinicProject.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Infrastructure
             builder.Services.AddInfrastructure(builder.Configuration);
 
-            // Add FluentValidation
+            // Controllers
             builder.Services.AddControllers();
 
+            // FluentValidation
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
 
-            builder.Services.AddOpenApi();
+            // OpenAPI
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
+            // AutoMapper
             builder.Services.AddAutoMapper(op =>
             {
                 op.AddProfile<UserMapping>();
+                op.AddProfile<CartItemMapping>();
                 op.AddProfile<AppointmentMapping>();
             });
+
+            // Redis
             builder.Services.AddSingleton<IRedisService, RedisService>();
 
-            builder.Services.AddSwaggerGen();
-
-            builder.Services.AddCors(op =>
+            // CORS
+            builder.Services.AddCors(options =>
             {
-                op.AddPolicy("Cors", policy =>
+                options.AddPolicy("Cors", policy =>
                 {
-                    policy.AllowAnyHeader()
-                          .AllowAnyOrigin()
-                          .AllowAnyMethod();
+                    policy.WithOrigins("https://localhost:7114") 
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
-            // Authentication
+            // JWT Authentication
             var jwtKey = builder.Configuration["JWT:Key"];
+
             if (string.IsNullOrWhiteSpace(jwtKey))
-            {
-                throw new InvalidOperationException("JWT:Key is not configured in appsettings or user secrets");
-            }
-            
+                throw new InvalidOperationException("JWT:Key is missing");
+
             var key = Encoding.UTF8.GetBytes(jwtKey);
 
-            builder.Services.AddAuthentication(op =>
-            {
-                op.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                op.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(op =>
-            {
-                op.RequireHttpsMetadata = true;
-                op.SaveToken = false;
-
-                op.TokenValidationParameters = new TokenValidationParameters
+            builder.Services
+                .AddAuthentication(options =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["JWT:Issuer"],
-                    ValidAudience = builder.Configuration["JWT:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ClockSkew = TimeSpan.Zero
-                };
-            })
-            .AddCookie(); // Add cookie authentication
-            
-            // Add Google authentication if configured
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = true;
+                    options.SaveToken = false;
+
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["JWT:Issuer"],
+                        ValidAudience = builder.Configuration["JWT:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            // Google Auth (optional)
             var googleClientId = builder.Configuration["Google:ClientId"];
+
             if (!string.IsNullOrWhiteSpace(googleClientId))
             {
-                builder.Services.AddAuthentication().AddGoogle(options =>
-                {
-                    options.ClientId = googleClientId;
-                    options.ClientSecret = builder.Configuration["Google:ClientSecret"]!;
-                    options.SaveTokens = true;
-                });
+                builder.Services
+                    .AddAuthentication()
+                    .AddGoogle(options =>
+                    {
+                        options.ClientId = googleClientId;
+                        options.ClientSecret = builder.Configuration["Google:ClientSecret"]!;
+                        options.SaveTokens = true;
+                    });
             }
 
+            // Forwarded Headers
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders =
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
             });
+
+            // Identity Lockout
             builder.Services.Configure<IdentityOptions>(options =>
             {
                 options.Lockout.AllowedForNewUsers = true;
@@ -111,64 +121,84 @@ namespace DentalClinicProject.API
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
             });
 
-            builder.Services.AddRateLimiter(option =>
+            // Rate Limiting
+            builder.Services.AddRateLimiter(options =>
             {
-                option.AddConcurrencyLimiter("ConcurrencyLimiter", opt =>
+                options.AddConcurrencyLimiter("ConcurrencyLimiter", opt =>
                 {
                     opt.PermitLimit = 30;
                     opt.QueueLimit = 5;
                     opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                }).AddPolicy("PerIpSliding", context =>
+                });
+
+                options.AddPolicy("PerIpSliding", context =>
                 {
                     var ip = context.Connection.RemoteIpAddress?.ToString();
 
-                    return RateLimitPartition.GetSlidingWindowLimiter(ip ?? "Unknown", _ => new SlidingWindowRateLimiterOptions
-                    {
-                        PermitLimit = 25,
-                        Window = TimeSpan.FromSeconds(10),
-                        SegmentsPerWindow = 10,
-                        QueueLimit = 0,
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        AutoReplenishment = true
-                    });
-                }).AddPolicy("AuthLimiter", context =>
+                    return RateLimitPartition.GetSlidingWindowLimiter(
+                        ip ?? "unknown",
+                        _ => new SlidingWindowRateLimiterOptions
+                        {
+                            PermitLimit = 25,
+                            Window = TimeSpan.FromSeconds(10),
+                            SegmentsPerWindow = 10,
+                            QueueLimit = 0,
+                            AutoReplenishment = true
+                        });
+                });
+
+                options.AddPolicy("AuthLimiter", context =>
                 {
                     var ip = context.Connection.RemoteIpAddress?.ToString();
 
-                    return RateLimitPartition.GetSlidingWindowLimiter(ip ?? "Unknown", _ => new SlidingWindowRateLimiterOptions
-                    {
-                        PermitLimit = 5,
-                        Window = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 5,
-                        QueueLimit = 0,
-                        AutoReplenishment = true
-                    });
+                    return RateLimitPartition.GetSlidingWindowLimiter(
+                        ip ?? "unknown",
+                        _ => new SlidingWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
+                            SegmentsPerWindow = 5,
+                            QueueLimit = 0,
+                            AutoReplenishment = true
+                        });
                 });
             });
 
             builder.Services.AddSingleton<HtmlSanitizer>();
 
             var app = builder.Build();
+
             app.UseForwardedHeaders();
 
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
-                app.MapOpenApi();
             }
+
+            // Custom Middlewares
             app.UseMiddleware<ScriptInjectionMiddleware>();
             app.UseMiddleware<GlobalMiddlewareException>();
-            app.UseMiddleware<BlacklistTokenMiddleware>();
+            app.UseMiddleware<CookieToHeaderMiddleware>();
+
             app.UseHttpsRedirection();
+
             app.UseStaticFiles();
+
             app.UseRouting();
+
             app.UseCors("Cors");
 
             app.UseAuthentication();
+
+            app.UseMiddleware<BlacklistTokenMiddleware>();
+
             app.UseAuthorization();
+
             app.UseRateLimiter();
-            app.MapControllers().RequireRateLimiting("PerIpSliding");
+
+            app.MapControllers()
+               .RequireRateLimiting("PerIpSliding");
 
             app.Run();
         }

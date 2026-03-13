@@ -13,7 +13,7 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
         Task<PagedResult<Rate>> GetProductRatesAsync(int productId, PaginationParams param);
         Task<Rate?> GetRateByAppointmentAsync(int appointmentId);
         Task<Rate> CreateRateAsync(CreateRateDTO dto);
-        Task<bool> UpdateRateAsync(int id, UpdateRateDTO dto);
+        Task<bool> UpdateRateAsync(UpdateRateDTO dto);
         Task<bool> DeleteRateAsync(int id);
         Task<double> GetDoctorAverageRatingAsync(int doctorId);
         Task<double> GetProductAverageRatingAsync(int productId);

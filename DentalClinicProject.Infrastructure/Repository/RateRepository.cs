@@ -64,7 +64,7 @@ namespace DentalClinicProject.Infrastructure.Repository
             throw new NotImplementedException();
         }
 
-        public Task<bool> UpdateRateAsync(int id, UpdateRateDTO dto)
+        public Task<bool> UpdateRateAsync(UpdateRateDTO dto)
         {
             throw new NotImplementedException();
         }

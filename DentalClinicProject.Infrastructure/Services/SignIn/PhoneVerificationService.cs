@@ -4,7 +4,7 @@ using DentalClinicProject.Core.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
-namespace DentalClinicProject.Infrastructure.Services
+namespace DentalClinicProject.Infrastructure.Services.SignIn
 {
     public class PhoneVerificationService : IPhoneVerificationService
     {

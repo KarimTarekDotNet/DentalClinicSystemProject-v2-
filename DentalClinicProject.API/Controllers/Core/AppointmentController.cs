@@ -12,10 +12,10 @@ namespace DentalClinicProject.API.Controllers.Core
     {
         public AppointmentController(IUnitOfWork work, IMapper mapper) : base(work, mapper) { }
 
-        #region Get Controllers
+        #region Admin Get Controllers
 
         [Authorize(Roles = "Admin")]
-        [HttpGet("get-appointments")]
+        [HttpGet("get-all")]
         public async Task<IActionResult> GetAppointments([FromQuery] PaginationParams param)
         {
             try
@@ -34,8 +34,8 @@ namespace DentalClinicProject.API.Controllers.Core
             }
         }
 
-        [Authorize(Roles = "Admin,Doctor")]
-        [HttpGet("get-appointments-by-doctor")]
+        [Authorize(Roles = "Admin")]
+        [HttpGet("get-by-doctor")]
         public async Task<IActionResult> GetDoctorAppointmentsAsync(int doctorId, [FromQuery] PaginationParams param)
         {
             try
@@ -58,8 +58,8 @@ namespace DentalClinicProject.API.Controllers.Core
             }
         }
 
-        [Authorize(Roles = "Admin,Patient")]
-        [HttpGet("get-appointments-by-patient")]
+        [Authorize(Roles = "Admin")]
+        [HttpGet("get-by-patient")]
         public async Task<IActionResult> GetPatientAppointmentsAsync(int patientId, [FromQuery] PaginationParams param)
         {
             try
@@ -68,13 +68,6 @@ namespace DentalClinicProject.API.Controllers.Core
 
                 if (result == null)
                     return NotFound(new { success = false, message = $"No appointments found for patient with ID {patientId}." });
-
-                if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
-                {
-                    var firstAppointment = result.Items?.FirstOrDefault();
-                    if (firstAppointment == null || firstAppointment.PatientAppUserId != GetCurrentUid())
-                        return Forbid();
-                }
 
                 return Ok(new { success = true, data = result });
             }
@@ -88,6 +81,68 @@ namespace DentalClinicProject.API.Controllers.Core
                 });
             }
         }
+
+        #endregion
+
+        #region My Appointments (Doctor / Patient)
+
+        [Authorize(Roles = "Doctor")]
+        [HttpGet("my-doctor")]
+        public async Task<IActionResult> GetMyDoctorAppointments([FromQuery] PaginationParams param)
+        {
+            try
+            {
+                var doctorId = GetCurrentUid();
+
+                var result = await work.AppointmentRepository
+                    .GetDoctorAppointmentsAsync(int.Parse(doctorId!), param);
+
+                if (result == null)
+                    return NotFound(new { success = false, message = "No appointments found." });
+
+                return Ok(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while retrieving doctor appointments.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        [Authorize(Roles = "Patient")]
+        [HttpGet("my-patient")]
+        public async Task<IActionResult> GetMyPatientAppointments([FromQuery] PaginationParams param)
+        {
+            try
+            {
+                var patientId = GetCurrentUid();
+
+                var result = await work.AppointmentRepository
+                    .GetPatientAppointmentsAsync(int.Parse(patientId!), param);
+
+                if (result == null)
+                    return NotFound(new { success = false, message = "No appointments found." });
+
+                return Ok(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while retrieving patient appointments.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #endregion
+
+        #region Shared Get
 
         [Authorize(Roles = "Admin,Doctor,Patient")]
         [HttpGet("get-by-id")]
@@ -124,7 +179,7 @@ namespace DentalClinicProject.API.Controllers.Core
         #region Edit Controllers
 
         [Authorize(Roles = "Admin,Patient")]
-        [HttpPost("create-appointment")]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateAppointmentAsync([FromBody] CreateAppointmentDTO dto)
         {
             try
@@ -158,14 +213,15 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [Authorize(Roles = "Admin,Patient")]
-        [HttpPut("update-appointment")]
+        [HttpPut("update")]
         public async Task<IActionResult> UpdateAppointmentAsync([FromBody] UpdateAppointmentDTO dto)
         {
             try
             {
                 if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
                 {
-                    var appointment = await work.AppointmentRepository.GetAppointmentWithDetailsAsync(dto.Id);
+                    var appointment = await work.AppointmentRepository
+                        .GetAppointmentWithDetailsAsync(dto.Id);
 
                     if (appointment == null)
                         return NotFound(new { success = false, message = $"No appointment found with ID {dto.Id}." });
@@ -193,14 +249,15 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [Authorize(Roles = "Admin,Patient")]
-        [HttpDelete("cancel-appointment")]
+        [HttpDelete("cancel")]
         public async Task<IActionResult> CancelAppointmentAsync([FromQuery] int id)
         {
             try
             {
                 if (User.IsInRole("Patient") && !User.IsInRole("Admin"))
                 {
-                    var appointment = await work.AppointmentRepository.GetAppointmentWithDetailsAsync(id);
+                    var appointment = await work.AppointmentRepository
+                        .GetAppointmentWithDetailsAsync(id);
 
                     if (appointment == null)
                         return NotFound(new { success = false, message = $"No appointment found with ID {id}." });
@@ -229,7 +286,7 @@ namespace DentalClinicProject.API.Controllers.Core
 
         #endregion
 
-        #region Private Helpers
+        #region Helpers
 
         private string? GetCurrentUid() =>
             User.FindFirst("uid")?.Value;

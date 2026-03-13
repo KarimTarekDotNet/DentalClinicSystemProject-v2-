@@ -7,5 +7,7 @@ namespace DentalClinicProject.Core.Entities.Core
         public List<Product> Products { get; set; } = null!;
         public decimal TotalPrice { get; set; }
         public int ItemCount { get; set; }
+        public string UserId { get; set; } = null!;
+        public AppUser User { get; set; } = null!;
     }
 }

@@ -16,6 +16,7 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                 Description = SeedData.Product1Description,
                 Name = SeedData.Product1Name,
                 Price = SeedData.Product1Price,
+                CartItemId = SeedData.CartItem1Id
             });
             builder.HasData(new Product
             {
@@ -24,7 +25,9 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                 Description = SeedData.Product2Description,
                 Name = SeedData.Product2Name,
                 Price = SeedData.Product2Price,
+                CartItemId = SeedData.CartItem1Id 
             });
+
             builder.HasData(new Product
             {
                 Id = SeedData.Product3Id,
@@ -32,6 +35,7 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                 Description = SeedData.Product3Description,
                 Name = SeedData.Product3Name,
                 Price = SeedData.Product3Price,
+                CartItemId = SeedData.CartItem2Id 
             });
             builder.HasData(new Product
             {
@@ -40,6 +44,7 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                 Description = SeedData.Product4Description,
                 Name = SeedData.Product4Name,
                 Price = SeedData.Product4Price,
+                CartItemId = SeedData.CartItem2Id
             });
         }
     }

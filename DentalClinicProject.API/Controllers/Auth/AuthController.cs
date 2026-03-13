@@ -23,6 +23,7 @@ namespace DentalClinicProject.API.Controllers.Auth
             _verifyLoginCodeValidator = verifyLoginCodeValidator;
             _resendEmailCodeValidator = resendEmailCodeValidator;
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> RegisterAsync(RegisterDTO dto)
         {
@@ -30,39 +31,52 @@ namespace DentalClinicProject.API.Controllers.Auth
             if (!response.Success)
                 return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
 
-            return StatusCode(response.StatusCode, response);
+            return StatusCode(response.StatusCode, new { message = "Registration successful" });
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> LoginAsync(LoginDTO dto)
         {
             var response = await work.AuthService.Login(dto);
+
             if (!response.Success)
                 return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
 
-            return StatusCode(response.StatusCode, response);
-        }
-
-        [HttpPost("verify-login-code")]
-        public async Task<IActionResult> VerifyLoginCodeAsync(VerifyLoginCodeDTO dto)
-        {
-            var validationResult = await _verifyLoginCodeValidator.ValidateAsync(dto);
-            if (!validationResult.IsValid)
+            if (!string.IsNullOrEmpty(response.Data?.Token) && !string.IsNullOrEmpty(response.Data?.RefreshToken))
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    statusCode = 400,
-                    message = "Validation failed",
-                    errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+                await SetCookies(response.Data.Token, response.Data.RefreshToken);
             }
 
-            var response = await work.AuthService.VerifyLoginCode(dto.Identifier, dto.Code);
+            return Ok(new
+            {
+                message = response.Message,
+                data = new
+                {
+                    response.Data?.Succeeded,
+                    response.Data?.UserId,
+                    response.Data?.Email,
+                    response.Data?.Username,
+                    response.Data?.Role
+                }
+            });
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO dto)
+        {
+            var response = await work.AuthService.RefreshTokenAsync(dto);
+
             if (!response.Success)
                 return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
 
-            return StatusCode(response.StatusCode, response);
+            if (!string.IsNullOrEmpty(response.Data?.Token) && !string.IsNullOrEmpty(response.Data?.RefreshToken))
+            {
+                await SetCookies(response.Data.Token, response.Data.RefreshToken);
+            }
+
+            return Ok(new { message = "Token refreshed successfully" });
         }
+
         [HttpPost("logout")]
         public async Task<IActionResult> LogoutAsync()
         {
@@ -73,7 +87,27 @@ namespace DentalClinicProject.API.Controllers.Auth
             if (!response.Success)
                 return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
 
-            return StatusCode(response.StatusCode, response);
+            Response.Cookies.Delete("accessToken");
+            Response.Cookies.Delete("refreshToken");
+
+            return Ok(new { message = "Logged out successfully" });
+        }
+
+        [HttpPost("verify-login-code")]
+        public async Task<IActionResult> VerifyLoginCodeAsync(VerifyLoginCodeDTO dto)
+        {
+            var validationResult = await _verifyLoginCodeValidator.ValidateAsync(dto);
+            if (!validationResult.IsValid)
+                return BadRequest(new { message = "Validation failed" });
+
+            var response = await work.AuthService.VerifyLoginCode(dto.Identifier, dto.Code);
+            if (!response.Success)
+                return BadRequest(new { message = "Verification failed" });
+
+            if (!string.IsNullOrEmpty(response.Data?.Token) && !string.IsNullOrEmpty(response.Data?.RefreshToken))
+                await SetCookies(response.Data.Token, response.Data.RefreshToken);
+
+            return Ok(new { message = "Login code verified successfully" });
         }
 
         [HttpPost("verify-email")]
@@ -81,24 +115,32 @@ namespace DentalClinicProject.API.Controllers.Auth
         {
             var response = await work.EmailVerificationService.VerifyEmailAsync(dto.Email, dto.Code);
 
-            return StatusCode(response.StatusCode, response);
+            if (!response.Success)
+                return BadRequest(new { message = "Email verification failed" });
+
+            if (!string.IsNullOrEmpty(response.Data?.Token) && !string.IsNullOrEmpty(response.Data?.RefreshToken))
+                await SetCookies(response.Data.Token, response.Data.RefreshToken);
+
+            return Ok(new { message = "Email verified successfully" });
         }
+
         [HttpPost("verify-phone")]
         [Authorize]
         public async Task<IActionResult> VerifyPhone([FromBody] VerifyPhoneDTO dto)
         {
             var userId = User.FindFirst("uid")?.Value ??
                          User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (userId == null)
                 return Unauthorized();
 
             var result = await work.PhoneVerificationService.VerifyPhoneAsync(userId, dto.Code);
-
             if (!result.Success)
-                return BadRequest(result);
+                return BadRequest(new { message = "Phone verification failed" });
 
-            return Ok(result);
+            if (!string.IsNullOrEmpty(result.Data?.Token) && !string.IsNullOrEmpty(result.Data?.RefreshToken))
+                await SetCookies(result.Data.Token, result.Data.RefreshToken);
+
+            return Ok(new { message = "Phone verified successfully" });
         }
 
         [HttpPost("resend-phone-code")]
@@ -106,14 +148,12 @@ namespace DentalClinicProject.API.Controllers.Auth
         {
             var userId = User.FindFirst("uid")?.Value ??
                          User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (userId == null)
                 return Unauthorized();
 
             var result = await work.PhoneVerificationService.ResendPhoneVerificationCodeAsync(userId);
-
             if (!result)
-                return BadRequest(new { message = "Failed to resend verification code. Please try again later or check rate limit." });
+                return BadRequest(new { message = "Failed to resend verification code" });
 
             return Ok(new { message = "Verification code sent successfully" });
         }
@@ -123,29 +163,36 @@ namespace DentalClinicProject.API.Controllers.Auth
         {
             var validationResult = await _resendEmailCodeValidator.ValidateAsync(dto);
             if (!validationResult.IsValid)
-            {
-                return BadRequest(new
-                {
-                    errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
-            }
+                return BadRequest(new { message = "Validation failed" });
 
             var result = await work.EmailVerificationService.ResendEmailVerificationCodeAsync(dto.SessionToken);
-
             if (!result)
-                return BadRequest(new { message = "Failed to resend verification code. Invalid session or rate limit exceeded." });
+                return BadRequest(new { message = "Failed to resend verification code" });
 
             return Ok(new { message = "Verification code sent successfully" });
         }
 
-        [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO dto)
-        {
-            var response = await work.AuthService.RefreshTokenAsync(dto);
-            if (!response.Success)
-                return BadRequest(new { errors = response.Errors ?? "Unknown", message = response.Message });
+        // ==================== Utilities ====================
 
-            return StatusCode(response.StatusCode, response);
+        private Task SetCookies(string accessToken, string refreshToken)
+        {
+            Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            });
+
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+
+            return Task.CompletedTask;
         }
     }
 }

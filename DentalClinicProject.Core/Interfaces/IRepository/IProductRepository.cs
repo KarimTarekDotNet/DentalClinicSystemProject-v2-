@@ -10,7 +10,7 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
         Task<Product?> GetProductWithDetailsAsync(int id);
         Task<PagedResult<Product>> GetProductsWithDetailsAsync(PaginationParams param);
         Task<Product> CreateProductAsync(CreateProductDTO dto);
-        Task<bool> UpdateProductAsync(int id, UpdateProductDTO dto);
+        Task<bool> UpdateProductAsync(UpdateProductDTO dto);
         Task<bool> DeleteProductAsync(int id);
         Task<IEnumerable<Product>> GetProductsByIdsAsync(List<int> ids);
     }

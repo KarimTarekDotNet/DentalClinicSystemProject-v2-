@@ -5,6 +5,7 @@ using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Services;
 using DentalClinicProject.Infrastructure.Services.AuthHelper;
+using DentalClinicProject.Infrastructure.Services.SignIn;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -39,7 +40,7 @@ namespace DentalClinicProject.Infrastructure.Repository
             ExternalLoginService = new ExternalLoginService(userManager, signInManager, TokenService,
             RedisService, context, httpContextAccessor, externalLoginLogger);
             AppointmentRepository = new AppointmentRepository(context, userManager, mapper);
-            CartItemRepository = new CartItemRepository(context);
+            CartItemRepository = new CartItemRepository(context, mapper);
             ProductRepository = new ProductRepository(context);
             ServiceRepository = new ServiceRepository(context);
             RateRepository = new RateRepository(context);

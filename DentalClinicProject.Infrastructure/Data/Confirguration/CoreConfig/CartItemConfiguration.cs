@@ -14,14 +14,17 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                 Id = SeedData.CartItem1Id,
                 CreatedAt = SeedData.CartItem1CreatedDate,
                 TotalPrice = SeedData.CartItem1TotalPrice,
-                ItemCount = SeedData.CartItem1ItemCount
+                ItemCount = SeedData.CartItem1ItemCount,
+                UserId = SeedData.Patient1UserId
             });
+
             builder.HasData(new CartItem
             {
                 Id = SeedData.CartItem2Id,
                 CreatedAt = SeedData.CartItem2CreatedDate,
                 TotalPrice = SeedData.CartItem2TotalPrice,
-                ItemCount = SeedData.CartItem2ItemCount
+                ItemCount = SeedData.CartItem2ItemCount,
+                UserId = SeedData.RegularUserId
             });
         }
     }

@@ -3,7 +3,6 @@ using DentalClinicProject.Core.DTOs.Core.Update;
 using DentalClinicProject.Core.Entities.Core;
 using DentalClinicProject.Core.Helpers;
 using DentalClinicProject.Core.Interfaces.IRepository;
-using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Infrastructure.Data.Context;
 
 namespace DentalClinicProject.Infrastructure.Repository
@@ -15,16 +14,6 @@ namespace DentalClinicProject.Infrastructure.Repository
         public ProductRepository(ApplicationDbContext context)
         {
             _context = context;
-        }
-
-        public Task<Product> CreateProductAsync(CreateProductDTO dto)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> DeleteProductAsync(int id)
-        {
-            throw new NotImplementedException();
         }
 
         public Task<IEnumerable<Product>> GetProductsByIdsAsync(List<int> ids)
@@ -42,7 +31,17 @@ namespace DentalClinicProject.Infrastructure.Repository
             throw new NotImplementedException();
         }
 
-        public Task<bool> UpdateProductAsync(int id, UpdateProductDTO dto)
+        public Task<Product> CreateProductAsync(CreateProductDTO dto)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> DeleteProductAsync(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> UpdateProductAsync(UpdateProductDTO dto)
         {
             throw new NotImplementedException();
         }
