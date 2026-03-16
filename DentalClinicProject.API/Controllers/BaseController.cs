@@ -10,12 +10,10 @@ namespace DentalClinicProject.API.Controllers
     public class BaseController : ControllerBase
     {
         protected readonly IUnitOfWork work;
-        protected readonly IMapper mapper;
 
-        public BaseController(IUnitOfWork work, IMapper mapper)
+        public BaseController(IUnitOfWork work)
         {
             this.work = work;
-            this.mapper = mapper;
         }
     }
 }

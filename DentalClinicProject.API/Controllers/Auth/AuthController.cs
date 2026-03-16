@@ -18,7 +18,7 @@ namespace DentalClinicProject.API.Controllers.Auth
 
         public AuthController(IUnitOfWork work, IMapper mapper,
             IValidator<VerifyLoginCodeDTO> verifyLoginCodeValidator,
-            IValidator<ResendEmailCodeDTO> resendEmailCodeValidator) : base(work, mapper)
+            IValidator<ResendEmailCodeDTO> resendEmailCodeValidator) : base(work)
         {
             _verifyLoginCodeValidator = verifyLoginCodeValidator;
             _resendEmailCodeValidator = resendEmailCodeValidator;

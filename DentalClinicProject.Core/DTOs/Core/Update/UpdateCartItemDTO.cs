@@ -1,8 +1,8 @@
-namespace DentalClinicProject.Core.DTOs.Core.Update
-{
-    public class UpdateCartItemDTO
+    namespace DentalClinicProject.Core.DTOs.Core.Update
     {
-        public int Id { get; set; }
-        public List<int>? ProductIds { get; set; }
+        public class UpdateCartItemDTO
+        {
+            public int Id { get; set; }
+            public List<int>? ProductIds { get; set; }
+        }
     }
-}

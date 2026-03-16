@@ -6,29 +6,49 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
 {
-    public class RateConfiguration : IEntityTypeConfiguration<Rate>
+    public class DoctorRateConfiguration : IEntityTypeConfiguration<DoctorRate>
     {
-        public void Configure(EntityTypeBuilder<Rate> builder)
+        public void Configure(EntityTypeBuilder<DoctorRate> builder)
         {
-            builder.HasData(new Rate
+            builder.HasData(new DoctorRate
             {
-                Id = SeedData.Product1Id,
+                Id = SeedData.Rate2Id,
+                CreatedAt = SeedData.Rate1CreatedDate,
+                DoctorId = SeedData.Doctor1EntityId,
+                Comment = SeedData.Rate1Comment,
+                Value = RatingCategory.Excellent,
+                UserId = SeedData.Patient1UserId
+            });
+        }
+    }
+
+    public class ProductRateConfiguration : IEntityTypeConfiguration<ProductRate>
+    {
+        public void Configure(EntityTypeBuilder<ProductRate> builder)
+        {
+            builder.HasData(new ProductRate
+            {
+                Id = SeedData.Rate1Id,
+                CreatedAt = SeedData.Rate1CreatedDate,
+                ProductId = SeedData.Product1Id,
+                Comment = SeedData.Rate2Comment,
+                Value = RatingCategory.Outstanding,
+                UserId = SeedData.Patient1UserId
+            });
+        }
+    }
+    public class AppointmentRateConfiguration : IEntityTypeConfiguration<AppointmentRate>
+    {
+        public void Configure(EntityTypeBuilder<AppointmentRate> builder)
+        {
+            builder.HasData(new AppointmentRate
+            {
+                Id = 3,
                 CreatedAt = SeedData.Rate1CreatedDate,
                 AppointmentId = SeedData.Appointment1Id,
-                Comment = SeedData.Rate1Comment,
-                DoctorId = SeedData.Doctor1EntityId,
-                ProductId = SeedData.Product1Id,
-                Value = RatingCategory.Excellent
-            });
-            builder.HasData(new Rate
-            {
-                Id = SeedData.Product2Id,
-                CreatedAt = SeedData.Rate2CreatedDate,
-                AppointmentId = SeedData.Appointment2Id,
                 Comment = SeedData.Rate2Comment,
-                DoctorId = SeedData.Doctor2EntityId,
-                ProductId = SeedData.Product2Id,
-                Value = RatingCategory.Good
+                Value = RatingCategory.Outstanding,
+                UserId = SeedData.Patient1UserId
             });
         }
     }

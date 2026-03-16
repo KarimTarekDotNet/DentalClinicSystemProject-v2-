@@ -3,6 +3,7 @@ using DentalClinicProject.Core.Entities.Core;
 using DentalClinicProject.Core.Entities.Users;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace DentalClinicProject.Infrastructure.Data.Context
 {
@@ -11,9 +12,13 @@ namespace DentalClinicProject.Infrastructure.Data.Context
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<Cart> Carts { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Rate> Rates { get; set; }
+        public DbSet<AppointmentRate> AppointmentRates { get; set; }
+        public DbSet<ProductRate> ProductRates { get; set; }
+        public DbSet<DoctorRate> DoctorRates { get; set; }
         public DbSet<Service> Services { get; set; }
 
         // User Db Set
@@ -37,6 +42,34 @@ namespace DentalClinicProject.Infrastructure.Data.Context
             builder.Entity<Appointment>()
                 .HasIndex(a => new { a.DoctorId, a.ExaminationEppointment })
                 .IsUnique();
+
+            builder.Entity<CartItem>()
+                .HasIndex(x => new { x.CartId, x.ProductId })
+                .IsUnique();
+
+            builder.Entity<DoctorRate>()
+                .HasIndex(r => new { r.UserId, r.DoctorId })
+                .IsUnique();
+
+            builder.Entity<Product>()
+                .Property(p => p.Price)
+                .HasPrecision(18, 2);
+
+            builder.Entity<Service>()
+                .Property(s => s.Price)
+                .HasPrecision(18, 2);
+
+            builder.Entity<CartItem>()
+                .Property(c => c.UnitPrice)
+                .HasPrecision(18, 2);
+
+            builder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasPrecision(18, 2);
+
+            builder.Entity<Doctor>()
+                .Property(d => d.Salary)
+                .HasPrecision(18, 2);
 
             // Configure Relationships
 
@@ -106,31 +139,31 @@ namespace DentalClinicProject.Infrastructure.Data.Context
 
             // CartItem -> Products (One-to-Many)
             builder.Entity<Product>()
-                .HasOne(p => p.CartItem)
-                .WithMany(c => c.Products)
-                .HasForeignKey(p => p.CartItemId)
+                .HasMany(p => p.CartItems)
+                .WithOne(c => c.Product)
+                .HasForeignKey(p => p.ProductId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(false);
 
             // Rate -> Appointment (One-to-One)
-            builder.Entity<Rate>()
+            builder.Entity<AppointmentRate>()
                 .HasOne(r => r.Appointment)
-                .WithOne()
-                .HasForeignKey<Rate>(r => r.AppointmentId)
+                .WithMany()
+                .HasForeignKey(r => r.AppointmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Rate -> Product (One-to-One)
-            builder.Entity<Rate>()
+            builder.Entity<ProductRate>()
                 .HasOne(r => r.Product)
-                .WithOne()
-                .HasForeignKey<Rate>(r => r.ProductId)
+                .WithMany()
+                .HasForeignKey(r => r.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Rate -> Doctor (One-to-One)
-            builder.Entity<Rate>()
+            builder.Entity<DoctorRate>()
                 .HasOne(r => r.Doctor)
-                .WithOne()
-                .HasForeignKey<Rate>(r => r.DoctorId)
+                .WithMany()
+                .HasForeignKey(r => r.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Apply all configurations from assembly (for seed data)

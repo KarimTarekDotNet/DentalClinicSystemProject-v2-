@@ -6,7 +6,7 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
     {
         // Repositories
         IAppointmentRepository AppointmentRepository { get; }
-        ICartItemRepository CartItemRepository { get; }
+        ICartRepository CartRepository { get; }
         IProductRepository ProductRepository { get; }
         IServiceRepository ServiceRepository { get; }
         IRateRepository RateRepository { get; }

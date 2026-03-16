@@ -3,6 +3,7 @@ using DentalClinicProject.Core.DTOs.Auth;
 using DentalClinicProject.Core.Enum;
 using DentalClinicProject.Core.Interfaces.IRepository;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
@@ -12,15 +13,18 @@ namespace DentalClinicProject.API.Controllers.Auth
     [EnableRateLimiting("AuthLimiter")]
     public class ExternalLoginController : BaseController
     {
-        public ExternalLoginController(IUnitOfWork work, IMapper mapper) : base(work, mapper)
+        public ExternalLoginController(IUnitOfWork work) : base(work)
         {
         }
 
-        [HttpGet("signin-google")]
-        public IActionResult SignInGoogle([FromQuery] string? returnUrl = null)
+        [HttpGet("google-login")]
+        public IActionResult SignInGoogle(string? returnUrl = null)
         {
             var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "ExternalLogin", new { returnUrl });
-            var properties = work.ExternalLoginService.ConfigureExternalAuthenticationProperties(Provider.Google, redirectUrl!);
+
+            var properties = work.ExternalLoginService
+                .ConfigureExternalAuthenticationProperties(Provider.Google, redirectUrl!);
+
             return Challenge(properties, Provider.Google.ToString());
         }
 
@@ -29,7 +33,7 @@ namespace DentalClinicProject.API.Controllers.Auth
         {
             try
             {
-                var info = await HttpContext.AuthenticateAsync();
+                var info = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
                 if (info?.Principal == null)
                 {
                     return BadRequest(new { message = "External authentication failed" });

@@ -2,6 +2,7 @@ using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
 using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Infrastructure;
+using DentalClinicProject.Infrastructure.Mapping;
 using DentalClinicProject.Infrastructure.Services;
 using FluentValidation.AspNetCore;
 using Ganss.Xss;
@@ -39,8 +40,10 @@ namespace DentalClinicProject.API
             builder.Services.AddAutoMapper(op =>
             {
                 op.AddProfile<UserMapping>();
-                op.AddProfile<CartItemMapping>();
+                op.AddProfile<CartMapping>();
                 op.AddProfile<AppointmentMapping>();
+                op.AddProfile<ProductMapping>();
+                op.AddProfile<RateMapping>();
             });
 
             // Redis

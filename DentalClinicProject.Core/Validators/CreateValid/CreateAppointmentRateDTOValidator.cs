@@ -3,10 +3,11 @@ using FluentValidation;
 
 namespace DentalClinicProject.Core.Validators.CreateValid
 {
-    public class CreateRateDTOValidator : AbstractValidator<CreateRateDTO>
+    public class CreateAppointmentRateDTOValidator : AbstractValidator<CreateApponitmentRateDTO>
     {
-        public CreateRateDTOValidator()
+        public CreateAppointmentRateDTOValidator()
         {
+
             RuleFor(x => x.Value)
                 .IsInEnum().WithMessage("Rating value must be a valid rating category.");
 
@@ -16,12 +17,6 @@ namespace DentalClinicProject.Core.Validators.CreateValid
 
             RuleFor(x => x.AppointmentId)
                 .GreaterThan(0).WithMessage("Appointment ID must be greater than 0.");
-
-            RuleFor(x => x.ProductId)
-                .GreaterThan(0).WithMessage("Product ID must be greater than 0.");
-
-            RuleFor(x => x.DoctorId)
-                .GreaterThan(0).WithMessage("Doctor ID must be greater than 0.");
         }
     }
 }

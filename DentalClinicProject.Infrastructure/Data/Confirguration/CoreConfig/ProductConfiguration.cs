@@ -9,43 +9,45 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
     {
         public void Configure(EntityTypeBuilder<Product> builder)
         {
-            builder.HasData(new Product
-            {
-                Id = SeedData.Product1Id,
-                CreatedAt = SeedData.Appointment1CreatedDate,
-                Description = SeedData.Product1Description,
-                Name = SeedData.Product1Name,
-                Price = SeedData.Product1Price,
-                CartItemId = SeedData.CartItem1Id
-            });
-            builder.HasData(new Product
-            {
-                Id = SeedData.Product2Id,
-                CreatedAt = SeedData.Appointment2CreatedDate,
-                Description = SeedData.Product2Description,
-                Name = SeedData.Product2Name,
-                Price = SeedData.Product2Price,
-                CartItemId = SeedData.CartItem1Id 
-            });
+            builder.HasData(
 
-            builder.HasData(new Product
-            {
-                Id = SeedData.Product3Id,
-                CreatedAt = SeedData.Appointment2CreatedDate,
-                Description = SeedData.Product3Description,
-                Name = SeedData.Product3Name,
-                Price = SeedData.Product3Price,
-                CartItemId = SeedData.CartItem2Id 
-            });
-            builder.HasData(new Product
-            {
-                Id = SeedData.Product4Id,
-                CreatedAt = SeedData.Appointment2CreatedDate,
-                Description = SeedData.Product4Description,
-                Name = SeedData.Product4Name,
-                Price = SeedData.Product4Price,
-                CartItemId = SeedData.CartItem2Id
-            });
+                new Product
+                {
+                    Id = SeedData.Product1Id,
+                    Name = SeedData.Product1Name,
+                    Description = SeedData.Product1Description,
+                    Price = SeedData.Product1Price,
+                    CreatedAt = new(2024, 1, 25)
+                },
+
+                new Product
+                {
+                    Id = SeedData.Product2Id,
+                    Name = SeedData.Product2Name,
+                    Description = SeedData.Product2Description,
+                    Price = SeedData.Product2Price,
+                    CreatedAt = new(2024, 1, 25)
+                },
+
+                new Product
+                {
+                    Id = SeedData.Product3Id,
+                    Name = SeedData.Product3Name,
+                    Description = SeedData.Product3Description,
+                    Price = SeedData.Product3Price,
+                    CreatedAt = new(2024, 1, 25)
+                },
+
+                new Product
+                {
+                    Id = SeedData.Product4Id,
+                    Name = SeedData.Product4Name,
+                    Description = SeedData.Product4Description,
+                    Price = SeedData.Product4Price,
+                    CreatedAt = new(2024, 1, 25)
+                }
+
+            );
         }
     }
 }

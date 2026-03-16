@@ -1,8 +1,7 @@
 using AutoMapper;
 using DentalClinicProject.Core.DTOs.Core.Create;
-using DentalClinicProject.Core.DTOs.Core.Update;
-using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Core.Enum;
+using DentalClinicProject.Core.Interfaces.IRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,139 +9,121 @@ using System.Security.Claims;
 namespace DentalClinicProject.API.Controllers.Core
 {
     [Authorize]
-    public class CartItemController : BaseController
+    [Route("api/cart")]
+    public class CartController : BaseController
     {
-        public CartItemController(IUnitOfWork work, IMapper mapper) : base(work, mapper) { }
+        public CartController(IUnitOfWork work) : base(work) { }
 
-        private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        private string GetUserId() => User.FindFirst("uid")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
         private Role GetUserRole() => Enum.Parse<Role>(User.FindFirstValue(ClaimTypes.Role)!);
 
-        [HttpGet("get-all")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetCartItemsWithProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        // GET api/cart/get
+        [HttpGet("get")]
+        public async Task<IActionResult> GetUserCart()
         {
             try
             {
-                var currentUserId = GetUserId();
-                var role = GetUserRole();
+                var cart = await work.CartRepository.GetCartByUserIdAsync(GetUserId(), GetUserRole());
 
-                var result = await work.CartItemRepository.GetCartItemsWithProductsAsync(currentUserId, role, pageNumber, pageSize);
-                return Ok(new { success = true, data = result });
+                if (cart is null)
+                    return NotFound(new { success = false, message = "Cart not found." });
+
+                return Ok(new { success = true, data = cart });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving carts.", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while retrieving cart.",
+                    error = ex.Message
+                });
             }
         }
 
-        [HttpGet("get-by-id")]
-        public async Task<IActionResult> GetCartItemWithProducts([FromQuery] int id)
-        {
-            try
-            {
-                var currentUserId = GetUserId();
-                var role = GetUserRole();
-
-                var result = await work.CartItemRepository.GetCartItemWithProductsAsync(id, currentUserId, role);
-                if (result == null)
-                    return NotFound(new { success = false, message = "Cart not found or access denied." });
-
-                return Ok(new { success = true, data = result });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving cart.", error = ex.Message });
-            }
-        }
-
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateCartItemAsync(CreateCartItemDTO dto)
-        {
-            try
-            {
-                var currentUserId = GetUserId();
-                var cartItem = await work.CartItemRepository.CreateCartItemAsync(dto, currentUserId);
-                return Ok(new { success = true, data = cartItem });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while creating cart.", error = ex.Message });
-            }
-        }
-
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateCartItemAsync(UpdateCartItemDTO dto)
-        {
-            try
-            {
-                var currentUserId = GetUserId();
-                var role = GetUserRole();
-
-                var result = await work.CartItemRepository.UpdateCartItemAsync(dto, currentUserId, role);
-                if (result == null) return NotFound(new { success = false, message = "Cart not found or access denied." });
-
-                return Ok(new { success = true, message = "Cart updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while updating cart.", error = ex.Message });
-            }
-        }
-
+        // POST api/cart/add-product
         [HttpPost("add-product")]
-        public async Task<IActionResult> AddProductToCart([FromQuery] int cartItemId, [FromQuery] int productId)
+        public async Task<IActionResult> AddProductToCart([FromQuery] int productId, [FromQuery] int quantity = 1)
         {
             try
             {
-                var currentUserId = GetUserId();
-                var role = GetUserRole();
+                var success = await work.CartRepository.AddProductToCartAsync(productId, GetUserId(), GetUserRole(), quantity);
 
-                var success = await work.CartItemRepository.AddProductToCartAsync(cartItemId, productId, currentUserId, role);
-                if (!success) return NotFound(new { success = false, message = "Cart or product not found or access denied." });
+                if (!success)
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Cart or product not found or access denied."
+                    });
 
                 return Ok(new { success = true, message = "Product added to cart successfully." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "An error occurred while adding product to cart.", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while adding product to cart.",
+                    error = ex.Message
+                });
             }
         }
 
-        [HttpDelete("clear-product")]
-        public async Task<IActionResult> ClearCart([FromQuery] int cartItemId)
-        {
-            try
-            {
-                var currentUserId = GetUserId();
-                var role = GetUserRole();
-
-                var success = await work.CartItemRepository.ClearCartAsync(cartItemId, currentUserId, role);
-                if (!success) return NotFound(new { success = false, message = "Cart not found or access denied." });
-
-                return Ok(new { success = true, message = "Cart cleared successfully." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while clearing cart.", error = ex.Message });
-            }
-        }
-
+        // DELETE api/cart/remove-product
         [HttpDelete("remove-product")]
-        public async Task<IActionResult> RemoveProductFromCart([FromQuery] int cartItemId, [FromQuery] int productId)
+        public async Task<IActionResult> RemoveProductFromCart([FromQuery] int cartId, [FromQuery] int productId, [FromQuery] int quantity = 1)
         {
             try
             {
-                var currentUserId = GetUserId();
-                var role = GetUserRole();
+                var success = await work.CartRepository.RemoveProductFromCartAsync(
+                    cartId, productId, GetUserId(), GetUserRole(), quantity);
 
-                var success = await work.CartItemRepository.RemoveProductFromCartAsync(cartItemId, productId, currentUserId, role);
-                if (!success) return NotFound(new { success = false, message = "Cart or product not found or access denied." });
+                if (!success)
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Cart or product not found or access denied."
+                    });
 
                 return Ok(new { success = true, message = "Product removed from cart successfully." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "An error occurred while removing product from cart.", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while removing product from cart.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        // DELETE api/cart/clear
+        [HttpDelete("clear")]
+        public async Task<IActionResult> ClearCart([FromQuery] int cartId)
+        {
+            try
+            {
+                var success = await work.CartRepository.ClearCartAsync(
+                    cartId, GetUserId(), GetUserRole());
+
+                if (!success)
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Cart not found or access denied."
+                    });
+
+                return Ok(new { success = true, message = "Cart cleared successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while clearing cart.",
+                    error = ex.Message
+                });
             }
         }
     }

@@ -10,7 +10,7 @@ namespace DentalClinicProject.API.Controllers.Core
 {
     public class AppointmentController : BaseController
     {
-        public AppointmentController(IUnitOfWork work, IMapper mapper) : base(work, mapper) { }
+        public AppointmentController(IUnitOfWork work) : base(work) { }
 
         #region Admin Get Controllers
 

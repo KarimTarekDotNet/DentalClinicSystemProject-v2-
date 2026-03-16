@@ -1,8 +1,10 @@
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Core.Interfaces.IServices;
+using DentalClinicProject.Core.Interfaces.Logging;
 using DentalClinicProject.Core.Validators.AuthValid;
 using DentalClinicProject.Infrastructure.Data.Context;
+using DentalClinicProject.Infrastructure.Logging;
 using DentalClinicProject.Infrastructure.Repository;
 using DentalClinicProject.Infrastructure.Services.AuthHelper;
 using FluentValidation;
@@ -47,7 +49,9 @@ namespace DentalClinicProject.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IMailService, MailService>();
             services.AddSingleton<IPhoneService, PhoneService>();
-            
+
+            services.AddScoped(typeof(IAppLogger<>), typeof(AppLogger<>));
+
             return services;
         }
     }

@@ -2,13 +2,13 @@
 using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IRepository;
 using DentalClinicProject.Core.Interfaces.IServices;
+using DentalClinicProject.Core.Interfaces.Logging;
 using DentalClinicProject.Infrastructure.Data.Context;
 using DentalClinicProject.Infrastructure.Services;
 using DentalClinicProject.Infrastructure.Services.AuthHelper;
 using DentalClinicProject.Infrastructure.Services.SignIn;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -25,7 +25,9 @@ namespace DentalClinicProject.Infrastructure.Repository
             IHttpContextAccessor httpContextAccessor, IMailService mailService, IPhoneService phoneService,
             ILogger<AuthService> authLogger, ILogger<EmailVerificationService> emailLogger,
             ILogger<PhoneVerificationService> phoneLogger, ILogger<RedisService> redisLogger, ILogger<TokenService> tokenLogger,
-            ILogger<ExternalLoginService> externalLoginLogger)
+            ILogger<ExternalLoginService> externalLoginLogger, IAppLogger<AppointmentRepository> AppLogger,
+            IAppLogger<CartRepository> CartLogger, IAppLogger<ProductRepository> ProductLogger, IAppLogger<ServiceRepository> ServiceLogger,
+            IAppLogger<RateRepository> RateLogger)
         {
             _context = context;
             _userManager = userManager;
@@ -39,17 +41,17 @@ namespace DentalClinicProject.Infrastructure.Repository
             PhoneVerificationService = new PhoneVerificationService(userManager, phoneService, RedisService, phoneLogger);
             ExternalLoginService = new ExternalLoginService(userManager, signInManager, TokenService,
             RedisService, context, httpContextAccessor, externalLoginLogger);
-            AppointmentRepository = new AppointmentRepository(context, userManager, mapper);
-            CartItemRepository = new CartItemRepository(context, mapper);
-            ProductRepository = new ProductRepository(context);
-            ServiceRepository = new ServiceRepository(context);
-            RateRepository = new RateRepository(context);
+            AppointmentRepository = new AppointmentRepository(context, userManager, mapper, AppLogger);
+            CartRepository = new CartRepository(context, mapper, CartLogger);
+            ProductRepository = new ProductRepository(context, mapper, ProductLogger);
+            ServiceRepository = new ServiceRepository(context, ServiceLogger);
+            RateRepository = new RateRepository(context, mapper, RateLogger);
         }
 
         // Repositories with lazy initialization
         public IAppointmentRepository AppointmentRepository { get; }
 
-        public ICartItemRepository CartItemRepository { get; }
+        public ICartRepository CartRepository { get; }
 
         public IProductRepository ProductRepository { get; }
 

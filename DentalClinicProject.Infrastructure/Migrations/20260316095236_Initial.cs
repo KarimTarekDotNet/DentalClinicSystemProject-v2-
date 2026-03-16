@@ -57,18 +57,19 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CartItems",
+                name: "Products",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ItemCount = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CreatedAt = table.Column<DateOnly>(type: "date", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CartItems", x => x.Id);
+                    table.PrimaryKey("PK_Products", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -78,7 +79,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     DurationInMinutes = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateOnly>(type: "date", nullable: false)
                 },
@@ -214,12 +215,32 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Carts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateOnly>(type: "date", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Carts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Carts_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Doctors",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Salary = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Salary = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CapactiyOfDay = table.Column<int>(type: "int", nullable: false),
                     IsApproved = table.Column<bool>(type: "bit", nullable: false),
                     ReasonForRejection = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -266,24 +287,57 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Products",
+                name: "Payments",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CartItemId = table.Column<int>(type: "int", nullable: true),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CustomerId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CartItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CartId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CreatedAt = table.Column<DateOnly>(type: "date", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.PrimaryKey("PK_CartItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Products_CartItems_CartItemId",
-                        column: x => x.CartItemId,
-                        principalTable: "CartItems",
+                        name: "FK_CartItems_Carts_CartId",
+                        column: x => x.CartId,
+                        principalTable: "Carts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CartItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -312,33 +366,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Payments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CustomerId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProductId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Payments_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -382,11 +409,13 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Value = table.Column<int>(type: "int", nullable: false),
                     Comment = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AppointmentId = table.Column<int>(type: "int", nullable: false),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    DoctorId = table.Column<int>(type: "int", nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(21)", maxLength: 21, nullable: false),
+                    AppointmentId = table.Column<int>(type: "int", nullable: true),
+                    DoctorId = table.Column<int>(type: "int", nullable: true),
+                    ProductId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateOnly>(type: "date", nullable: false)
                 },
                 constraints: table =>
@@ -428,32 +457,23 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Provider", "ProviderId", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "admin-1", 0, "ADMIN-CONCURRENCY-001", "admin@dentalclinic.com", true, "Ahmed", "Mohamed", false, null, "ADMIN@DENTALCLINIC.COM", "ADMIN@DENTALCLINIC.COM", "$2a$12$PIsynfBEoxgQeX.9b1NhK.42bvqcU4z0m6RdOJK1SobWfVPSsx1EO", null, false, "Local", "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "QURNSU5TRUNVUklUWVNUQU1QMDA=", false, "admin@dentalclinic.com" },
-                    { "doctor-1", 0, "DOCTOR1-CONCURRENCY-001", "doctor1@dentalclinic.com", true, "Sarah", "Ali", false, null, "DOCTOR1@DENTALCLINIC.COM", "DOCTOR1@DENTALCLINIC.COM", "$2a$12$ItcpdkqaPFmWpAG6LVkGKu8qUspXV7sz4phOKrdAPQtcVN/hPb.tK", null, false, "Local", "b2c3d4e5-f6a7-8901-bcde-f12345678901", "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=", false, "doctor1@dentalclinic.com" },
-                    { "doctor-2", 0, "DOCTOR2-CONCURRENCY-001", "doctor2@dentalclinic.com", true, "Mahmoud", "Hassan", false, null, "DOCTOR2@DENTALCLINIC.COM", "DOCTOR2@DENTALCLINIC.COM", "$2a$12$ItcpdkqaPFmWpAG6LVkGKu8qUspXV7sz4phOKrdAPQtcVN/hPb.tK", null, false, "Local", "c3d4e5f6-a7b8-9012-cdef-123456789012", "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=", false, "doctor2@dentalclinic.com" },
-                    { "patient-1", 0, "PATIENT1-CONCURRENCY-001", "patient1@example.com", true, "Fatima", "Ahmed", false, null, "PATIENT1@EXAMPLE.COM", "PATIENT1@EXAMPLE.COM", "$2a$12$zFq7IDP.u8zUtqmlrBD55upoDjQFjAn9iPdRNfK95t0rg1fpIwh6S", null, false, "Local", "d4e5f6a7-b8c9-0123-def1-234567890123", "UEFUSUVOVDFTRUNTVVJJVFVTVEFNUA==", false, "patient1@example.com" },
-                    { "patient-2", 0, "PATIENT2-CONCURRENCY-001", "patient2@example.com", true, "Khaled", "Abdullah", false, null, "PATIENT2@EXAMPLE.COM", "PATIENT2@EXAMPLE.COM", "$2a$12$zFq7IDP.u8zUtqmlrBD55upoDjQFjAn9iPdRNfK95t0rg1fpIwh6S", null, false, "Local", "e5f6a7b8-c9d0-1234-ef12-345678901234", "UEFUSUVOVDJTRUNTVVJJVFVTVEFNUA==", false, "patient2@example.com" },
-                    { "user-1", 0, "USER-CONCURRENCY-001", "user@example.com", true, "John", "Doe", false, null, "USER@EXAMPLE.COM", "USER@EXAMPLE.COM", "$2a$12$vymAZaoE/iWWVCwN1Cp3DueGCpKrkt3QtrXosVVylxPFSJ31p7a7S", null, false, "Local", "f6a7b8c9-d0e1-2345-f123-456789012345", "VVNFUlNFQ1VSSVRZU1RBTVA=", false, "user@example.com" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "CartItems",
-                columns: new[] { "Id", "CreatedAt", "ItemCount", "TotalPrice" },
-                values: new object[,]
-                {
-                    { 1, new DateOnly(2024, 1, 20), 2, 430m },
-                    { 2, new DateOnly(2024, 1, 22), 2, 165m }
+                    { "admin-1", 0, "ADMIN-CONCURRENCY-001", "admin@dentalclinic.com", true, "Admin", "Dental", false, null, "ADMIN@DENTALCLINIC.COM", "ADMIN@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEGorgtN1aWOwuhiQlRZuNa7oimeAFA8ZS+yb3u8Qc+C+x3MipZNNNIhOi5bl/1ws+Q==", null, false, "Local", "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "QURNSU5TRUNVUklUWVNUQU1QMDA=", false, "admin@dentalclinic.com" },
+                    { "doctor-1", 0, "DOCTOR1-CONCURRENCY-001", "doctor1@dentalclinic.com", true, "Sarah", "Ali", false, null, "DOCTOR1@DENTALCLINIC.COM", "DOCTOR1@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEA6LlozjK/8AFKsEUcoc0URf8Kc3fYa8bLsw6H5+lOvxvwmCGU65CSzZYe3DiUlc1Q==", null, false, "Local", "b2c3d4e5-f6a7-8901-bcde-f12345678901", "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=", false, "doctor1@dentalclinic.com" },
+                    { "doctor-2", 0, "DOCTOR2-CONCURRENCY-001", "doctor2@dentalclinic.com", true, "Mahmoud", "Hassan", false, null, "DOCTOR2@DENTALCLINIC.COM", "DOCTOR2@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEIJreR46lGQQQ5gUg3tr2IJZisZshIYLvut+kz5WqIo2zwKjv9NYrZS9xHAhm1k8Bg==", null, false, "Local", "c3d4e5f6-a7b8-9012-cdef-123456789012", "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=", false, "doctor2@dentalclinic.com" },
+                    { "patient-1", 0, "PATIENT1-CONCURRENCY-001", "patient1@example.com", true, "Fatima", "Ahmed", false, null, "PATIENT1@EXAMPLE.COM", "PATIENT1@EXAMPLE.COM", "AQAAAAIAAYagAAAAEJ/gwoGWiEdWFdk8LsAh1dfUvAu/9GGa3ebgbXpWPWhXjnsXRm0DQ8nLKq/yi55LcA==", null, false, "Local", "d4e5f6a7-b8c9-0123-def1-234567890123", "UEFUSUVOVDFTRUNTVVJJVFVTVEFNUA==", false, "patient1@example.com" },
+                    { "patient-2", 0, "PATIENT2-CONCURRENCY-001", "patient2@example.com", true, "Khaled", "Abdullah", false, null, "PATIENT2@EXAMPLE.COM", "PATIENT2@EXAMPLE.COM", "AQAAAAIAAYagAAAAEMk3DV11DFvB+aKgUbP3Q84O++hoXTi1I9ikkt+Via2Rr4VsZHLyvWWw9yUMRQghcg==", null, false, "Local", "e5f6a7b8-c9d0-1234-ef12-345678901234", "UEFUSUVOVDJTRUNTVVJJVFVTVEFNUA==", false, "patient2@example.com" },
+                    { "user-1", 0, "USER-CONCURRENCY-001", "user@example.com", true, "John", "Doe", false, null, "USER@EXAMPLE.COM", "USER@EXAMPLE.COM", "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==", null, false, "Local", "f6a7b8c9-d0e1-2345-f123-456789012345", "VVNFUlNFQ1VSSVRZU1RBTVA=", false, "user@example.com" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Products",
-                columns: new[] { "Id", "CartItemId", "CreatedAt", "Description", "Name", "Price" },
+                columns: new[] { "Id", "CreatedAt", "Description", "Name", "Price" },
                 values: new object[,]
                 {
-                    { 1, null, new DateOnly(2024, 1, 25), "Advanced electric toothbrush with 3 cleaning modes", "Electric Toothbrush", 350m },
-                    { 2, null, new DateOnly(2024, 1, 26), "Medical toothpaste for sensitive teeth", "Medical Toothpaste", 80m },
-                    { 3, null, new DateOnly(2024, 1, 26), "Mint flavored dental floss", "Dental Floss", 45m },
-                    { 4, null, new DateOnly(2024, 1, 26), "Antibacterial mouthwash", "Mouthwash", 120m }
+                    { 1, new DateOnly(2024, 1, 25), "Advanced electric toothbrush with 3 cleaning modes", "Electric Toothbrush", 350m },
+                    { 2, new DateOnly(2024, 1, 25), "Medical toothpaste for sensitive teeth", "Medical Toothpaste", 80m },
+                    { 3, new DateOnly(2024, 1, 25), "Mint flavored dental floss", "Dental Floss", 45m },
+                    { 4, new DateOnly(2024, 1, 25), "Antibacterial mouthwash", "Mouthwash", 120m }
                 });
 
             migrationBuilder.InsertData(
@@ -474,6 +494,20 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 values: new object[] { 1, "admin-1", new DateOnly(2024, 1, 1) });
 
             migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[] { "role-admin", "admin-1" });
+
+            migrationBuilder.InsertData(
+                table: "Carts",
+                columns: new[] { "Id", "CreatedAt", "UserId" },
+                values: new object[,]
+                {
+                    { 1, new DateOnly(2024, 1, 20), "patient-1" },
+                    { 2, new DateOnly(2024, 1, 22), "user-1" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Doctors",
                 columns: new[] { "Id", "AppUserId", "CapactiyOfDay", "CreatedAt", "IsApproved", "ReasonForRejection", "Salary" },
                 values: new object[,]
@@ -492,6 +526,22 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Rates",
+                columns: new[] { "Id", "Comment", "CreatedAt", "Discriminator", "ProductId", "UserId", "Value" },
+                values: new object[] { 1, "Good service overall", new DateOnly(2024, 2, 2), "ProductRate", 1, "patient-1", 4 });
+
+            migrationBuilder.InsertData(
+                table: "CartItems",
+                columns: new[] { "Id", "CartId", "CreatedAt", "ProductId", "Quantity", "UnitPrice" },
+                values: new object[,]
+                {
+                    { 1, 1, new DateOnly(2026, 3, 16), 1, 1, 350m },
+                    { 2, 1, new DateOnly(2026, 3, 16), 2, 1, 80m },
+                    { 3, 2, new DateOnly(2026, 3, 16), 3, 1, 45m },
+                    { 4, 2, new DateOnly(2026, 3, 16), 4, 1, 120m }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Patients",
                 columns: new[] { "Id", "AppUserId", "CreatedAt", "DoctorId" },
                 values: new object[,]
@@ -499,6 +549,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     { 1, "patient-1", new DateOnly(2024, 1, 15), 1 },
                     { 2, "patient-2", new DateOnly(2024, 1, 18), 1 }
                 });
+
+            migrationBuilder.InsertData(
+                table: "Rates",
+                columns: new[] { "Id", "Comment", "CreatedAt", "Discriminator", "DoctorId", "UserId", "Value" },
+                values: new object[] { 2, "Excellent service and very professional doctor", new DateOnly(2024, 2, 2), "DoctorRate", 1, "patient-1", 3 });
 
             migrationBuilder.InsertData(
                 table: "Appointments",
@@ -511,12 +566,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             migrationBuilder.InsertData(
                 table: "Rates",
-                columns: new[] { "Id", "AppointmentId", "Comment", "CreatedAt", "DoctorId", "ProductId", "Value" },
-                values: new object[,]
-                {
-                    { 1, 1, "Excellent service and very professional doctor", new DateOnly(2024, 2, 2), 1, 1, 3 },
-                    { 2, 2, "Good service overall", new DateOnly(2024, 2, 6), 2, 2, 2 }
-                });
+                columns: new[] { "Id", "AppointmentId", "Comment", "CreatedAt", "Discriminator", "UserId", "Value" },
+                values: new object[] { 3, 1, "Good service overall", new DateOnly(2024, 2, 2), "AppointmentRate", "patient-1", 4 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Admins_AppUserId",
@@ -587,6 +638,22 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CartItems_CartId_ProductId",
+                table: "CartItems",
+                columns: new[] { "CartId", "ProductId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CartItems_ProductId",
+                table: "CartItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Carts_UserId",
+                table: "Carts",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Doctors_AppUserId",
                 table: "Doctors",
                 column: "AppUserId",
@@ -610,27 +677,26 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_CartItemId",
-                table: "Products",
-                column: "CartItemId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Rates_AppointmentId",
                 table: "Rates",
-                column: "AppointmentId",
-                unique: true);
+                column: "AppointmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rates_DoctorId",
                 table: "Rates",
-                column: "DoctorId",
-                unique: true);
+                column: "DoctorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rates_ProductId",
                 table: "Rates",
-                column: "ProductId",
-                unique: true);
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Rates_UserId_DoctorId",
+                table: "Rates",
+                columns: new[] { "UserId", "DoctorId" },
+                unique: true,
+                filter: "[DoctorId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
@@ -661,6 +727,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CartItems");
+
+            migrationBuilder.DropTable(
                 name: "Payments");
 
             migrationBuilder.DropTable(
@@ -673,6 +742,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
+                name: "Carts");
+
+            migrationBuilder.DropTable(
                 name: "Appointments");
 
             migrationBuilder.DropTable(
@@ -683,9 +755,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Services");
-
-            migrationBuilder.DropTable(
-                name: "CartItems");
 
             migrationBuilder.DropTable(
                 name: "Doctors");
