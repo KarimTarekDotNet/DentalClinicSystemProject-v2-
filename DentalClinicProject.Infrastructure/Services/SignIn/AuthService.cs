@@ -199,9 +199,7 @@ public class AuthService : IAuthService
                 // Always get from database for phone to ensure we get the verified user
                 // Don't use Redis cache for phone login to avoid getting wrong user
                 user = await _userManager.Users
-                    .FirstOrDefaultAsync(u => u.PhoneNumber != null && 
-                                              u.PhoneNumber == identifier && 
-                                              u.PhoneNumberConfirmed);
+                    .FirstOrDefaultAsync(u => u.PhoneNumber != null &&  u.PhoneNumber == identifier && u.PhoneNumberConfirmed);
                 
                 if (user != null)
                 {

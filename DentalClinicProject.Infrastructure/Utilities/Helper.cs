@@ -91,8 +91,7 @@ namespace DentalClinicProject.Infrastructure.Utilities
         }
 
         public static async Task SendVerificationEmailAsync(string email, IRedisService redisService,
-            Core.Interfaces.IServices.IMailService mailService,
-            ILogger<AuthService> logger)
+            IMailService mailService, ILogger<AuthService> logger)
         {
             try
             {

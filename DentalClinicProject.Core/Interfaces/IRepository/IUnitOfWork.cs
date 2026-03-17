@@ -10,6 +10,7 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
         IProductRepository ProductRepository { get; }
         IServiceRepository ServiceRepository { get; }
         IRateRepository RateRepository { get; }
+        IAdminManager AdminManager { get; }
 
         // Services
         ITokenService TokenService { get; }

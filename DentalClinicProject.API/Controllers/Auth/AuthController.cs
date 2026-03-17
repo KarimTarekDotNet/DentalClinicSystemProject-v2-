@@ -181,7 +181,7 @@ namespace DentalClinicProject.API.Controllers.Auth
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddMinutes(15)
+                Expires = DateTime.UtcNow.AddMinutes(30)
             });
 
             Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
@@ -189,7 +189,7 @@ namespace DentalClinicProject.API.Controllers.Auth
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
+                Expires = DateTime.UtcNow.AddDays(15)
             });
 
             return Task.CompletedTask;
