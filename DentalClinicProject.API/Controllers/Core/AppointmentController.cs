@@ -5,6 +5,7 @@ using DentalClinicProject.Core.Helpers;
 using DentalClinicProject.Core.Interfaces.IRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DentalClinicProject.API.Controllers.Core
 {
@@ -288,8 +289,7 @@ namespace DentalClinicProject.API.Controllers.Core
 
         #region Helpers
 
-        private string? GetCurrentUid() =>
-            User.FindFirst("uid")?.Value;
+        private string? GetCurrentUid() => User.FindFirst("uid")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
         #endregion
     }

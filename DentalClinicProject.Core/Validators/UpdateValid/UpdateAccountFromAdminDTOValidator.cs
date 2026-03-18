@@ -37,18 +37,26 @@ namespace DentalClinicProject.Core.Validators.UpdateValid
                 .WithMessage("Phone number must be in a valid international format (e.g., +201234567890).");
         }
     }
-    public class DeleteAccountFromAdminDTOValidator : AbstractValidator<DeleteAccountFromAdminDTO>
+    public class UpdateAccountDTOValidator : AbstractValidator<UpdateAccountDTO>
     {
-        public DeleteAccountFromAdminDTOValidator()
+        public UpdateAccountDTOValidator()
         {
-            RuleFor(x => x.Email)
-               .NotEmpty().WithMessage("Email is required.")
-               .EmailAddress().WithMessage("Please enter a valid email address.");
+            RuleFor(x => x.FirstName)
+                .MaximumLength(100).WithMessage("First name cannot exceed 100 characters.");
 
-            RuleFor(x => x.Password)
-               .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,15}$")
-               .WithMessage("Password must be 8–15 characters long and include at least one uppercase letter, one lowercase letter," +
-               " one number, and one special character.");
+            RuleFor(x => x.LastName)
+                .MaximumLength(100).WithMessage("Last name cannot exceed 100 characters.");
+
+            RuleFor(x => x.UserName)
+                .MaximumLength(100).WithMessage("Username cannot exceed 100 characters.")
+                .Matches(@"^(?!.*[_\\s-]{2,})[a-zA-Z0-9][a-zA-Z0-9_\\s\\-]*[a-zA-Z0-9]$")
+                .When(x => !string.IsNullOrEmpty(x.UserName))
+                .WithMessage("Username must start and end with a letter or number and cannot contain consecutive spaces," +
+                " hyphens, or underscores.");
+
+            RuleFor(x => x.PhoneNumber)
+                .Matches(@"^\+?\d{10,15}$")
+                .WithMessage("Phone number must be in a valid international format (e.g., +201234567890).");
         }
     }
 }

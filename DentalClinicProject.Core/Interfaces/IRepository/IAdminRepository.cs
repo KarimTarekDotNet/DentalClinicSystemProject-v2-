@@ -5,7 +5,7 @@ using DentalClinicProject.Core.Entities.Users;
 
 namespace DentalClinicProject.Core.Interfaces.IRepository
 {
-    public interface IAdminManager
+    public interface IAdminRepository
     {
         Task<AppUser> CreateAccountFromAdminAsync(RegisterDTO dto);
         Task<bool> DeleteAccountFromAdminAsync(DeleteAccountFromAdminDTO dto);

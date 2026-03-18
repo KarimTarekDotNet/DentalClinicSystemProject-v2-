@@ -8,12 +8,12 @@ using Microsoft.AspNetCore.Identity;
 
 namespace DentalClinicProject.Infrastructure.Repository
 {
-    public class AdminManager : IAdminManager
+    public class AdminRepository : IAdminRepository
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
 
-        public AdminManager(UserManager<AppUser> userManager, IMapper mapper)
+        public AdminRepository(UserManager<AppUser> userManager, IMapper mapper)
         {
             _userManager = userManager;
             _mapper = mapper;

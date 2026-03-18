@@ -46,7 +46,8 @@ namespace DentalClinicProject.Infrastructure.Repository
             ProductRepository = new ProductRepository(context, mapper, ProductLogger);
             ServiceRepository = new ServiceRepository(context, ServiceLogger);
             RateRepository = new RateRepository(context, mapper, RateLogger);
-            AdminManager = new AdminManager(userManager, mapper);
+            AdminManager = new AdminRepository(userManager, mapper);
+            ProfileRepository = new ProfileRepository(userManager, mapper, phoneService, RedisService, authLogger);
         }
 
         // Repositories with lazy initialization
@@ -55,7 +56,8 @@ namespace DentalClinicProject.Infrastructure.Repository
         public IProductRepository ProductRepository { get; }
         public IServiceRepository ServiceRepository { get; }
         public IRateRepository RateRepository { get; }
-        public IAdminManager AdminManager { get; }
+        public IAdminRepository AdminManager { get; }
+        public IProfileRepository ProfileRepository { get; }
 
         // Services
         public ITokenService TokenService { get; }

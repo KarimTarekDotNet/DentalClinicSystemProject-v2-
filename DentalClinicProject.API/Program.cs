@@ -44,6 +44,7 @@ namespace DentalClinicProject.API
                 op.AddProfile<AppointmentMapping>();
                 op.AddProfile<ProductMapping>();
                 op.AddProfile<RateMapping>();
+                op.AddProfile<ProfileMapping>();
             });
 
             // Redis
