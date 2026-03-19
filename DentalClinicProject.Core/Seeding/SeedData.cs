@@ -1,4 +1,6 @@
-﻿namespace DentalClinicProject.Core.Seeding
+﻿using DentalClinicProject.Core.Enum;
+
+namespace DentalClinicProject.Core.Seeding
 {
     public static class SeedData
     {
@@ -205,24 +207,52 @@
         public static readonly DateTime Appointment2Date = new(2024, 2, 5, 14, 0, 0, DateTimeKind.Utc);
         public static readonly DateOnly Appointment2CreatedDate = new(2024, 1, 26);
 
+
         // ========================
-        // Payments Data
+        // Orders Data
+        // ========================
+        public const int Order1Id = 1;
+        public const OrderStatus Order1Status = OrderStatus.Completed;
+
+        public const int Order2Id = 2;
+        public const OrderStatus Order2Status = OrderStatus.Pending;
+
+        // ========================
+        // OrderItems Data
+        // ========================
+        public const int OrderItem1Id = 1;
+        public const string OrderItem1ProductName = "Electric Toothbrush";
+        public const decimal OrderItem1Price = 350m;
+        public const int OrderItem1Quantity = 1;
+
+        public const int OrderItem2Id = 2;
+        public const string OrderItem2ProductName = "Medical Toothpaste";
+        public const decimal OrderItem2Price = 80m;
+        public const int OrderItem2Quantity = 2;
+
+        public const int OrderItem3Id = 3;
+        public const string OrderItem3ProductName = "Dental Floss";
+        public const decimal OrderItem3Price = 45m;
+        public const int OrderItem3Quantity = 3;
+
+        // ========================
+        // Payments Data (Updated)
         // ========================
         public const int Payment1Id = 1;
         public const decimal Payment1Amount = 350m;
         public const string Payment1Currency = "EGP";
-        public const string Payment1Description = "Purchase of Electric Toothbrush";
+        public const string Payment1Description = "Payment for Order #1 - Electric Toothbrush";
         public static readonly DateTime Payment1Date = new(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
-        public const string Payment1Method = "Credit Card";
-        public const string Payment1TransactionId = "TXN-2024-001-ELECTRIC-BRUSH";
+        public const PaymentMethod Payment1Method = PaymentMethod.CreditCard;
+        public const string Payment1TransactionId = "TXN-2024-001-ORDER-1";
 
         public const int Payment2Id = 2;
-        public const decimal Payment2Amount = 80m;
+        public const decimal Payment2Amount = 160m;
         public const string Payment2Currency = "EGP";
-        public const string Payment2Description = "Purchase of Medical Toothpaste";
+        public const string Payment2Description = "Payment for Order #2 - Medical Toothpaste x2";
         public static readonly DateTime Payment2Date = new(2024, 1, 20, 14, 15, 0, DateTimeKind.Utc);
-        public const string Payment2Method = "Cash";
-        public const string Payment2TransactionId = "TXN-2024-002-TOOTHPASTE";
+        public const PaymentMethod Payment2Method = PaymentMethod.Cash;
+        public const string Payment2TransactionId = "TXN-2024-002-ORDER-2";
 
         // ========================
         // Rates Data
@@ -256,5 +286,8 @@
 
         public const decimal Doctor2Salary = 18000m;
         public const int Doctor2Capacity = 8;
+
+
+
     }
 }

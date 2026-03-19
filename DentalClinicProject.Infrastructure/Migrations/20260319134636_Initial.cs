@@ -259,6 +259,26 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -282,33 +302,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         name: "FK_RefreshTokens_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Payments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CustomerId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProductId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Payments_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -366,6 +359,62 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    OrderId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Payments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CustomerId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -517,12 +566,12 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Payments",
-                columns: new[] { "Id", "Amount", "Currency", "CustomerId", "Description", "PaymentDate", "PaymentMethod", "ProductId", "Status", "TransactionId" },
+                table: "Orders",
+                columns: new[] { "Id", "Status", "UserId" },
                 values: new object[,]
                 {
-                    { 1, 350m, "EGP", "user-1", "Purchase of Electric Toothbrush", new DateTime(2024, 1, 15, 10, 30, 0, 0, DateTimeKind.Utc), "Credit Card", 1, "Paid", "TXN-2024-001-ELECTRIC-BRUSH" },
-                    { 2, 80m, "EGP", "user-1", "Purchase of Medical Toothpaste", new DateTime(2024, 1, 20, 14, 15, 0, 0, DateTimeKind.Utc), "Cash", 2, "Refunded", "TXN-2024-002-TOOTHPASTE" }
+                    { 1, "Completed", "user-1" },
+                    { 2, "Pending", "user-1" }
                 });
 
             migrationBuilder.InsertData(
@@ -535,10 +584,20 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 columns: new[] { "Id", "CartId", "CreatedAt", "ProductId", "Quantity", "UnitPrice" },
                 values: new object[,]
                 {
-                    { 1, 1, new DateOnly(2026, 3, 16), 1, 1, 350m },
-                    { 2, 1, new DateOnly(2026, 3, 16), 2, 1, 80m },
-                    { 3, 2, new DateOnly(2026, 3, 16), 3, 1, 45m },
-                    { 4, 2, new DateOnly(2026, 3, 16), 4, 1, 120m }
+                    { 1, 1, new DateOnly(2026, 3, 19), 1, 1, 350m },
+                    { 2, 1, new DateOnly(2026, 3, 19), 2, 1, 80m },
+                    { 3, 2, new DateOnly(2026, 3, 19), 3, 1, 45m },
+                    { 4, 2, new DateOnly(2026, 3, 19), 4, 1, 120m }
+                });
+
+            migrationBuilder.InsertData(
+                table: "OrderItems",
+                columns: new[] { "Id", "OrderId", "Price", "ProductId", "ProductName", "Quantity" },
+                values: new object[,]
+                {
+                    { 1, 1, 350m, 1, "Electric Toothbrush", 1 },
+                    { 2, 2, 80m, 2, "Medical Toothpaste", 2 },
+                    { 3, 2, 45m, 3, "Dental Floss", 3 }
                 });
 
             migrationBuilder.InsertData(
@@ -548,6 +607,15 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 {
                     { 1, "patient-1", new DateOnly(2024, 1, 15), 1 },
                     { 2, "patient-2", new DateOnly(2024, 1, 18), 1 }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Payments",
+                columns: new[] { "Id", "Amount", "Currency", "CustomerId", "Description", "OrderId", "PaidAt", "PaymentMethod", "Status", "TransactionId" },
+                values: new object[,]
+                {
+                    { 1, 350m, "EGP", "user-1", "Payment for Order #1 - Electric Toothbrush", 1, new DateTime(2024, 1, 15, 10, 30, 0, 0, DateTimeKind.Utc), "CreditCard", "Paid", "TXN-2024-001-ORDER-1" },
+                    { 2, 160m, "EGP", "user-1", "Payment for Order #2 - Medical Toothpaste x2", 2, new DateTime(2024, 1, 20, 14, 15, 0, 0, DateTimeKind.Utc), "Cash", "Refunded", "TXN-2024-002-ORDER-2" }
                 });
 
             migrationBuilder.InsertData(
@@ -660,6 +728,21 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_OrderId",
+                table: "OrderItems",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_ProductId",
+                table: "OrderItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_UserId",
+                table: "Orders",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Patients_AppUserId",
                 table: "Patients",
                 column: "AppUserId",
@@ -671,10 +754,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_ProductId",
+                name: "IX_Payments_OrderId",
                 table: "Payments",
-                column: "ProductId",
-                unique: true);
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rates_AppointmentId",
@@ -730,6 +812,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 name: "CartItems");
 
             migrationBuilder.DropTable(
+                name: "OrderItems");
+
+            migrationBuilder.DropTable(
                 name: "Payments");
 
             migrationBuilder.DropTable(
@@ -743,6 +828,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Carts");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "Appointments");

@@ -200,7 +200,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 1,
                             CartId = 1,
-                            CreatedAt = new DateOnly(2026, 3, 14),
+                            CreatedAt = new DateOnly(2026, 3, 19),
                             ProductId = 1,
                             Quantity = 1,
                             UnitPrice = 350m
@@ -209,7 +209,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 2,
                             CartId = 1,
-                            CreatedAt = new DateOnly(2026, 3, 14),
+                            CreatedAt = new DateOnly(2026, 3, 19),
                             ProductId = 2,
                             Quantity = 1,
                             UnitPrice = 80m
@@ -218,7 +218,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 3,
                             CartId = 2,
-                            CreatedAt = new DateOnly(2026, 3, 14),
+                            CreatedAt = new DateOnly(2026, 3, 19),
                             ProductId = 3,
                             Quantity = 1,
                             UnitPrice = 45m
@@ -227,10 +227,110 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 4,
                             CartId = 2,
-                            CreatedAt = new DateOnly(2026, 3, 14),
+                            CreatedAt = new DateOnly(2026, 3, 19),
                             ProductId = 4,
                             Quantity = 1,
                             UnitPrice = 120m
+                        });
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Order", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Orders");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Status = "Completed",
+                            UserId = "user-1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Status = "Pending",
+                            UserId = "user-1"
+                        });
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.OrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("OrderItems");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            OrderId = 1,
+                            Price = 350m,
+                            ProductId = 1,
+                            ProductName = "Electric Toothbrush",
+                            Quantity = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            OrderId = 2,
+                            Price = 80m,
+                            ProductId = 2,
+                            ProductName = "Medical Toothpaste",
+                            Quantity = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            OrderId = 2,
+                            Price = 45m,
+                            ProductId = 3,
+                            ProductName = "Dental Floss",
+                            Quantity = 3
                         });
                 });
 
@@ -258,28 +358,26 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("PaymentDate")
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TransactionId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId")
-                        .IsUnique();
+                    b.HasIndex("OrderId");
 
                     b.ToTable("Payments");
 
@@ -290,25 +388,25 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             Amount = 350m,
                             Currency = "EGP",
                             CustomerId = "user-1",
-                            Description = "Purchase of Electric Toothbrush",
-                            PaymentDate = new DateTime(2024, 1, 15, 10, 30, 0, 0, DateTimeKind.Utc),
-                            PaymentMethod = "Credit Card",
-                            ProductId = 1,
+                            Description = "Payment for Order #1 - Electric Toothbrush",
+                            OrderId = 1,
+                            PaidAt = new DateTime(2024, 1, 15, 10, 30, 0, 0, DateTimeKind.Utc),
+                            PaymentMethod = "CreditCard",
                             Status = "Paid",
-                            TransactionId = "TXN-2024-001-ELECTRIC-BRUSH"
+                            TransactionId = "TXN-2024-001-ORDER-1"
                         },
                         new
                         {
                             Id = 2,
-                            Amount = 80m,
+                            Amount = 160m,
                             Currency = "EGP",
                             CustomerId = "user-1",
-                            Description = "Purchase of Medical Toothpaste",
-                            PaymentDate = new DateTime(2024, 1, 20, 14, 15, 0, 0, DateTimeKind.Utc),
+                            Description = "Payment for Order #2 - Medical Toothpaste x2",
+                            OrderId = 2,
+                            PaidAt = new DateTime(2024, 1, 20, 14, 15, 0, 0, DateTimeKind.Utc),
                             PaymentMethod = "Cash",
-                            ProductId = 2,
                             Status = "Refunded",
-                            TransactionId = "TXN-2024-002-TOOTHPASTE"
+                            TransactionId = "TXN-2024-002-ORDER-2"
                         });
                 });
 
@@ -392,6 +490,10 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(21)
                         .HasColumnType("nvarchar(21)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Value")
                         .HasColumnType("int");
@@ -990,11 +1092,20 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<int>("AppointmentId")
                         .HasColumnType("int");
 
-                    b.HasIndex("AppointmentId")
-                        .IsUnique()
-                        .HasFilter("[AppointmentId] IS NOT NULL");
+                    b.HasIndex("AppointmentId");
 
                     b.HasDiscriminator().HasValue("AppointmentRate");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 3,
+                            Comment = "Good service overall",
+                            CreatedAt = new DateOnly(2024, 2, 2),
+                            UserId = "patient-1",
+                            Value = 4,
+                            AppointmentId = 1
+                        });
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.DoctorRate", b =>
@@ -1004,7 +1115,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
-                    b.HasIndex("DoctorId")
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("UserId", "DoctorId")
                         .IsUnique()
                         .HasFilter("[DoctorId] IS NOT NULL");
 
@@ -1016,6 +1129,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             Id = 2,
                             Comment = "Excellent service and very professional doctor",
                             CreatedAt = new DateOnly(2024, 2, 2),
+                            UserId = "patient-1",
                             Value = 3,
                             DoctorId = 1
                         });
@@ -1028,9 +1142,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.HasIndex("ProductId")
-                        .IsUnique()
-                        .HasFilter("[ProductId] IS NOT NULL");
+                    b.HasIndex("ProductId");
 
                     b.HasDiscriminator().HasValue("ProductRate");
 
@@ -1040,6 +1152,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             Id = 1,
                             Comment = "Good service overall",
                             CreatedAt = new DateOnly(2024, 2, 2),
+                            UserId = "patient-1",
                             Value = 4,
                             ProductId = 1
                         });
@@ -1112,15 +1225,45 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Payment", b =>
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Order", b =>
                 {
-                    b.HasOne("DentalClinicProject.Core.Entities.Core.Product", "Product")
-                        .WithOne("Payment")
-                        .HasForeignKey("DentalClinicProject.Core.Entities.Core.Payment", "ProductId")
+                    b.HasOne("DentalClinicProject.Core.Entities.Users.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.OrderItem", b =>
+                {
+                    b.HasOne("DentalClinicProject.Core.Entities.Core.Order", "Order")
+                        .WithMany("Items")
+                        .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("DentalClinicProject.Core.Entities.Core.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Payment", b =>
+                {
+                    b.HasOne("DentalClinicProject.Core.Entities.Core.Order", "Order")
+                        .WithMany("Payments")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Users.Admin", b =>
@@ -1217,8 +1360,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.AppointmentRate", b =>
                 {
                     b.HasOne("DentalClinicProject.Core.Entities.Core.Appointment", "Appointment")
-                        .WithOne()
-                        .HasForeignKey("DentalClinicProject.Core.Entities.Core.AppointmentRate", "AppointmentId")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1228,8 +1371,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.DoctorRate", b =>
                 {
                     b.HasOne("DentalClinicProject.Core.Entities.Users.Doctor", "Doctor")
-                        .WithOne()
-                        .HasForeignKey("DentalClinicProject.Core.Entities.Core.DoctorRate", "DoctorId")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1239,8 +1382,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.ProductRate", b =>
                 {
                     b.HasOne("DentalClinicProject.Core.Entities.Core.Product", "Product")
-                        .WithOne()
-                        .HasForeignKey("DentalClinicProject.Core.Entities.Core.ProductRate", "ProductId")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1252,12 +1395,16 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Order", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Product", b =>
                 {
                     b.Navigation("CartItems");
-
-                    b.Navigation("Payment")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Users.Doctor", b =>

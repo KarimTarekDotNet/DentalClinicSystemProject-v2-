@@ -5,7 +5,6 @@
         public string Name { get; set; } = null!;
         public string Description { get; set; } = null!;
         public decimal Price { get; set; }
-        public Payment Payment { get; set; } = null!;
         public List<CartItem> CartItems { get; set; } = new();
     }
 }

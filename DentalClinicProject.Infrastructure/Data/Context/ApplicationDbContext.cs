@@ -20,6 +20,8 @@ namespace DentalClinicProject.Infrastructure.Data.Context
         public DbSet<ProductRate> ProductRates { get; set; }
         public DbSet<DoctorRate> DoctorRates { get; set; }
         public DbSet<Service> Services { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         // User Db Set
         public DbSet<Admin> Admins { get; set; }
@@ -69,6 +71,10 @@ namespace DentalClinicProject.Infrastructure.Data.Context
 
             builder.Entity<Doctor>()
                 .Property(d => d.Salary)
+                .HasPrecision(18, 2);
+
+            builder.Entity<OrderItem>()
+                .Property(oi => oi.Price)
                 .HasPrecision(18, 2);
 
             // Configure Relationships
@@ -130,12 +136,26 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .HasForeignKey(a => a.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Product -> Payment (One-to-One)
-            builder.Entity<Product>()
-                .HasOne(p => p.Payment)
-                .WithOne(pay => pay.Product)
-                .HasForeignKey<Payment>(pay => pay.ProductId)
+            // AppUser -> Orders (One-to-Many)
+            builder.Entity<Order>()
+                .HasOne(o => o.AppUser)
+                .WithMany()
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Order -> OrderItems (One-to-Many)
+            builder.Entity<OrderItem>()
+                .HasOne(oi => oi.Order)
+                .WithMany(o => o.Items)
+                .HasForeignKey(oi => oi.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Order -> Payments (One-to-Many)
+            builder.Entity<Payment>()
+                .HasOne(p => p.Order)
+                .WithMany(o => o.Payments)
+                .HasForeignKey(p => p.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // CartItem -> Products (One-to-Many)
             builder.Entity<Product>()

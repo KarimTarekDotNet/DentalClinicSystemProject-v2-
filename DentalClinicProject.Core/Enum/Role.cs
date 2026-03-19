@@ -5,6 +5,7 @@
         User,
         Patient,
         Doctor,
-        Admin
+        Admin,
+        DelivaryMan
     }
 }
