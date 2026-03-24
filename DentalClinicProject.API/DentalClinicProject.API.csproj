@@ -23,4 +23,8 @@
     <ProjectReference Include="..\DentalClinicProject.Infrastructure\DentalClinicProject.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

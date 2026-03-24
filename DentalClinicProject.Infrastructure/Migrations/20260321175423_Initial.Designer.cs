@@ -4,6 +4,7 @@ using DentalClinicProject.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260321175423_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -200,7 +203,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 1,
                             CartId = 1,
-                            CreatedAt = new DateOnly(2026, 3, 24),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 1,
                             Quantity = 1,
                             UnitPrice = 350m
@@ -209,7 +212,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 2,
                             CartId = 1,
-                            CreatedAt = new DateOnly(2026, 3, 24),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 2,
                             Quantity = 1,
                             UnitPrice = 80m
@@ -218,7 +221,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 3,
                             CartId = 2,
-                            CreatedAt = new DateOnly(2026, 3, 24),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 3,
                             Quantity = 1,
                             UnitPrice = 45m
@@ -227,7 +230,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 4,
                             CartId = 2,
-                            CreatedAt = new DateOnly(2026, 3, 24),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 4,
                             Quantity = 1,
                             UnitPrice = 120m
@@ -242,10 +245,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("DeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DeliveryId")
+                    b.Property<int?>("DeliveryId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -268,16 +268,12 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            DeliveryDate = new DateTime(2026, 4, 5, 12, 0, 0, 0, DateTimeKind.Unspecified),
-                            DeliveryId = 1,
                             Status = "Completed",
                             UserId = "user-1"
                         },
                         new
                         {
                             Id = 2,
-                            DeliveryDate = new DateTime(2026, 4, 6, 12, 0, 0, 0, DateTimeKind.Unspecified),
-                            DeliveryId = 2,
                             Status = "Pending",
                             UserId = "user-1"
                         });
@@ -385,17 +381,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TransactionId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId")
-                        .IsUnique()
-                        .HasFilter("[Status] = 'Paid'");
-
-                    b.HasIndex("TransactionId")
-                        .IsUnique()
-                        .HasFilter("[TransactionId] IS NOT NULL");
+                    b.HasIndex("OrderId");
 
                     b.ToTable("Payments");
 
@@ -451,9 +441,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("Products");
@@ -465,8 +452,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Advanced electric toothbrush with 3 cleaning modes",
                             Name = "Electric Toothbrush",
-                            Price = 350m,
-                            Stock = 5
+                            Price = 350m
                         },
                         new
                         {
@@ -474,8 +460,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Medical toothpaste for sensitive teeth",
                             Name = "Medical Toothpaste",
-                            Price = 80m,
-                            Stock = 10
+                            Price = 80m
                         },
                         new
                         {
@@ -483,8 +468,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Mint flavored dental floss",
                             Name = "Dental Floss",
-                            Price = 45m,
-                            Stock = 20
+                            Price = 45m
                         },
                         new
                         {
@@ -492,8 +476,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Antibacterial mouthwash",
                             Name = "Mouthwash",
-                            Price = 120m,
-                            Stock = 8
+                            Price = 120m
                         });
                 });
 
@@ -1310,11 +1293,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Order", b =>
                 {
-                    b.HasOne("DentalClinicProject.Core.Entities.Users.Delivery", "Delivery")
+                    b.HasOne("DentalClinicProject.Core.Entities.Users.Delivery", null)
                         .WithMany("Orders")
-                        .HasForeignKey("DeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("DeliveryId");
 
                     b.HasOne("DentalClinicProject.Core.Entities.Users.AppUser", "AppUser")
                         .WithMany()
@@ -1323,8 +1304,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
-
-                    b.Navigation("Delivery");
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.OrderItem", b =>

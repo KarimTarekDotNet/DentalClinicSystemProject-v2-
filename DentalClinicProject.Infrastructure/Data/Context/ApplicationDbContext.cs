@@ -1,6 +1,7 @@
 ﻿using DentalClinicProject.Core.Entities.AuthModel;
 using DentalClinicProject.Core.Entities.Core;
 using DentalClinicProject.Core.Entities.Users;
+using DentalClinicProject.Core.Enum;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
@@ -28,12 +29,22 @@ namespace DentalClinicProject.Infrastructure.Data.Context
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Patient> Patients { get; set; }
+        public DbSet<Delivery> Deliveries { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
             builder.UseCollation("Arabic_CI_AI");
+
+            builder.Entity<Doctor>()
+                .HasQueryFilter(d => d.IsApproved);
+
+            builder.Entity<Delivery>()
+                .HasQueryFilter(d => d.IsApproved);
+
+            builder.Entity<Order>()
+                .HasQueryFilter(o => o.Status != OrderStatus.Cancelled);
 
             // Configure AppUser
             builder.Entity<AppUser>()
@@ -47,6 +58,16 @@ namespace DentalClinicProject.Infrastructure.Data.Context
 
             builder.Entity<CartItem>()
                 .HasIndex(x => new { x.CartId, x.ProductId })
+                .IsUnique();
+
+            builder.Entity<Payment>()
+                .HasIndex(p => p.TransactionId)
+                .IsUnique()
+                .HasFilter("[TransactionId] IS NOT NULL");
+
+            builder.Entity<Payment>()
+                .HasIndex(p => p.OrderId)
+                .HasFilter("[Status] = 'Paid'")
                 .IsUnique();
 
             builder.Entity<DoctorRate>()
@@ -70,6 +91,10 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .HasPrecision(18, 2);
 
             builder.Entity<Doctor>()
+                .Property(d => d.Salary)
+                .HasPrecision(18, 2);
+
+            builder.Entity<Delivery>()
                 .Property(d => d.Salary)
                 .HasPrecision(18, 2);
 
@@ -120,7 +145,8 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .HasOne(a => a.Doctor)
                 .WithMany(d => d.Appointments)
                 .HasForeignKey(a => a.DoctorId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             // Patient -> Appointments (One-to-Many)
             builder.Entity<Appointment>()
@@ -184,7 +210,8 @@ namespace DentalClinicProject.Infrastructure.Data.Context
                 .HasOne(r => r.Doctor)
                 .WithMany()
                 .HasForeignKey(r => r.DoctorId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             // Apply all configurations from assembly (for seed data)
             builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);

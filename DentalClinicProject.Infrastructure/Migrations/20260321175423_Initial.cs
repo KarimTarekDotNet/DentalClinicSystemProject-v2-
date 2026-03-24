@@ -235,6 +235,30 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Deliveries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Salary = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CapactiyOfDay = table.Column<int>(type: "int", nullable: false),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    ReasonForRejection = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateOnly>(type: "date", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Deliveries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Deliveries_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Doctors",
                 columns: table => new
                 {
@@ -256,26 +280,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Orders",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -333,6 +337,32 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DeliveryId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Orders_Deliveries_DeliveryId",
+                        column: x => x.DeliveryId,
+                        principalTable: "Deliveries",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -491,24 +521,15 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "AspNetRoles",
-                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[,]
-                {
-                    { "role-admin", "ROLE-ADMIN-001", "Admin", "ADMIN" },
-                    { "role-doctor", "ROLE-DOCTOR-001", "Doctor", "DOCTOR" },
-                    { "role-patient", "ROLE-PATIENT-001", "Patient", "PATIENT" },
-                    { "role-user", "ROLE-USER-001", "User", "USER" }
-                });
-
-            migrationBuilder.InsertData(
                 table: "AspNetUsers",
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Provider", "ProviderId", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "admin-1", 0, "ADMIN-CONCURRENCY-001", "admin@dentalclinic.com", true, "Admin", "Dental", false, null, "ADMIN@DENTALCLINIC.COM", "ADMIN@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEGorgtN1aWOwuhiQlRZuNa7oimeAFA8ZS+yb3u8Qc+C+x3MipZNNNIhOi5bl/1ws+Q==", null, false, "Local", "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "QURNSU5TRUNVUklUWVNUQU1QMDA=", false, "admin@dentalclinic.com" },
-                    { "doctor-1", 0, "DOCTOR1-CONCURRENCY-001", "doctor1@dentalclinic.com", true, "Sarah", "Ali", false, null, "DOCTOR1@DENTALCLINIC.COM", "DOCTOR1@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEA6LlozjK/8AFKsEUcoc0URf8Kc3fYa8bLsw6H5+lOvxvwmCGU65CSzZYe3DiUlc1Q==", null, false, "Local", "b2c3d4e5-f6a7-8901-bcde-f12345678901", "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=", false, "doctor1@dentalclinic.com" },
-                    { "doctor-2", 0, "DOCTOR2-CONCURRENCY-001", "doctor2@dentalclinic.com", true, "Mahmoud", "Hassan", false, null, "DOCTOR2@DENTALCLINIC.COM", "DOCTOR2@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEIJreR46lGQQQ5gUg3tr2IJZisZshIYLvut+kz5WqIo2zwKjv9NYrZS9xHAhm1k8Bg==", null, false, "Local", "c3d4e5f6-a7b8-9012-cdef-123456789012", "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=", false, "doctor2@dentalclinic.com" },
+                    { "admin-1", 0, "ADMIN-CONCURRENCY-001", "admin@dentalclinic.com", true, "Admin", "Dental", false, null, "ADMIN@DENTALCLINIC.COM", "ADMIN@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEGorgtN1aWOwuhiQlRZuNa7oimeAFA8ZS+yb3u8Qc+C+x3MipZNNNIhOi5bl/1ws+Q==", null, false, "Local", "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "QURNSU5TRUNVUklUWVNUQU1QMDA=", false, "adminUsername" },
+                    { "delivery-1", 0, "DELIVERY1-CONCURRENCY-001", "delivery@dentalclinic.com", true, "Ahmed", "Elsayed", false, null, "DEKIVERY1@DENTALCLINIC.COM", "DELIVERYUSERNAME1", "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==", null, false, "Local", "b2c3d4e5-f6a7-8901-qwer-f12345678901", "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=", false, "deliveryUsername1" },
+                    { "delivery-2", 0, "DELIVERY2-CONCURRENCY-001", "delivery2@dentalclinic.com", true, "Mahmoud", "Hassan", false, null, "DELIVERY2@DENTALCLINIC.COM", "DELIVERYUSERNAME2", "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==", null, false, "Local", "c3d4e5f6-a7b8-9012-asdf-123456789012", "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=", false, "deliveryUsername2" },
+                    { "doctor-1", 0, "DOCTOR1-CONCURRENCY-001", "doctor1@dentalclinic.com", true, "Sarah", "Ali", false, null, "DOCTOR1@DENTALCLINIC.COM", "DOCTOR1@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEA6LlozjK/8AFKsEUcoc0URf8Kc3fYa8bLsw6H5+lOvxvwmCGU65CSzZYe3DiUlc1Q==", null, false, "Local", "b2c3d4e5-f6a7-8901-bcde-f12345678901", "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=", false, "doctorUsername1" },
+                    { "doctor-2", 0, "DOCTOR2-CONCURRENCY-001", "doctor2@dentalclinic.com", true, "Mahmoud", "Hassan", false, null, "DOCTOR2@DENTALCLINIC.COM", "DOCTOR2@DENTALCLINIC.COM", "AQAAAAIAAYagAAAAEIJreR46lGQQQ5gUg3tr2IJZisZshIYLvut+kz5WqIo2zwKjv9NYrZS9xHAhm1k8Bg==", null, false, "Local", "c3d4e5f6-a7b8-9012-cdef-123456789012", "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=", false, "doctorUsername2" },
                     { "patient-1", 0, "PATIENT1-CONCURRENCY-001", "patient1@example.com", true, "Fatima", "Ahmed", false, null, "PATIENT1@EXAMPLE.COM", "PATIENT1@EXAMPLE.COM", "AQAAAAIAAYagAAAAEJ/gwoGWiEdWFdk8LsAh1dfUvAu/9GGa3ebgbXpWPWhXjnsXRm0DQ8nLKq/yi55LcA==", null, false, "Local", "d4e5f6a7-b8c9-0123-def1-234567890123", "UEFUSUVOVDFTRUNTVVJJVFVTVEFNUA==", false, "patient1@example.com" },
                     { "patient-2", 0, "PATIENT2-CONCURRENCY-001", "patient2@example.com", true, "Khaled", "Abdullah", false, null, "PATIENT2@EXAMPLE.COM", "PATIENT2@EXAMPLE.COM", "AQAAAAIAAYagAAAAEMk3DV11DFvB+aKgUbP3Q84O++hoXTi1I9ikkt+Via2Rr4VsZHLyvWWw9yUMRQghcg==", null, false, "Local", "e5f6a7b8-c9d0-1234-ef12-345678901234", "UEFUSUVOVDJTRUNTVVJJVFVTVEFNUA==", false, "patient2@example.com" },
                     { "user-1", 0, "USER-CONCURRENCY-001", "user@example.com", true, "John", "Doe", false, null, "USER@EXAMPLE.COM", "USER@EXAMPLE.COM", "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==", null, false, "Local", "f6a7b8c9-d0e1-2345-f123-456789012345", "VVNFUlNFQ1VSSVRZU1RBTVA=", false, "user@example.com" }
@@ -543,17 +564,21 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 values: new object[] { 1, "admin-1", new DateOnly(2024, 1, 1) });
 
             migrationBuilder.InsertData(
-                table: "AspNetUserRoles",
-                columns: new[] { "RoleId", "UserId" },
-                values: new object[] { "role-admin", "admin-1" });
-
-            migrationBuilder.InsertData(
                 table: "Carts",
                 columns: new[] { "Id", "CreatedAt", "UserId" },
                 values: new object[,]
                 {
                     { 1, new DateOnly(2024, 1, 20), "patient-1" },
                     { 2, new DateOnly(2024, 1, 22), "user-1" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Deliveries",
+                columns: new[] { "Id", "AppUserId", "CapactiyOfDay", "CreatedAt", "IsApproved", "ReasonForRejection", "Salary" },
+                values: new object[,]
+                {
+                    { 1, "delivery-1", 10, new DateOnly(2024, 1, 5), true, null, 15000m },
+                    { 2, "delivery-2", 8, new DateOnly(2024, 1, 10), false, "He did not submit the required documents.", 0.0m }
                 });
 
             migrationBuilder.InsertData(
@@ -567,11 +592,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             migrationBuilder.InsertData(
                 table: "Orders",
-                columns: new[] { "Id", "Status", "UserId" },
+                columns: new[] { "Id", "DeliveryId", "Status", "UserId" },
                 values: new object[,]
                 {
-                    { 1, "Completed", "user-1" },
-                    { 2, "Pending", "user-1" }
+                    { 1, null, "Completed", "user-1" },
+                    { 2, null, "Pending", "user-1" }
                 });
 
             migrationBuilder.InsertData(
@@ -584,10 +609,10 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 columns: new[] { "Id", "CartId", "CreatedAt", "ProductId", "Quantity", "UnitPrice" },
                 values: new object[,]
                 {
-                    { 1, 1, new DateOnly(2026, 3, 19), 1, 1, 350m },
-                    { 2, 1, new DateOnly(2026, 3, 19), 2, 1, 80m },
-                    { 3, 2, new DateOnly(2026, 3, 19), 3, 1, 45m },
-                    { 4, 2, new DateOnly(2026, 3, 19), 4, 1, 120m }
+                    { 1, 1, new DateOnly(2026, 3, 21), 1, 1, 350m },
+                    { 2, 1, new DateOnly(2026, 3, 21), 2, 1, 80m },
+                    { 3, 2, new DateOnly(2026, 3, 21), 3, 1, 45m },
+                    { 4, 2, new DateOnly(2026, 3, 21), 4, 1, 120m }
                 });
 
             migrationBuilder.InsertData(
@@ -722,6 +747,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Deliveries_AppUserId",
+                table: "Deliveries",
+                column: "AppUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Doctors_AppUserId",
                 table: "Doctors",
                 column: "AppUserId",
@@ -736,6 +766,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
                 name: "IX_OrderItems_ProductId",
                 table: "OrderItems",
                 column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_DeliveryId",
+                table: "Orders",
+                column: "DeliveryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_UserId",
@@ -837,6 +872,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Deliveries");
 
             migrationBuilder.DropTable(
                 name: "Patients");

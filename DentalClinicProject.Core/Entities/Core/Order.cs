@@ -12,6 +12,11 @@ namespace DentalClinicProject.Core.Entities.Core
         public AppUser AppUser { get; set; } = null!;
         public string UserId { get; set; } = null!;
 
+        public Delivery Delivery { get; set; } = null!;
+        public int DeliveryId { get; set; }
+
+        public DateTime DeliveryDate { get; set; } = DateTime.UtcNow;
+
         [NotMapped]
         public decimal TotalAmount => Items.Sum(i => i.Price * i.Quantity);
 

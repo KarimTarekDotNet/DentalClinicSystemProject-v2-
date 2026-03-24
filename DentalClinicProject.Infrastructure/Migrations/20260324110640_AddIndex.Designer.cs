@@ -4,6 +4,7 @@ using DentalClinicProject.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260324110640_AddIndex")]
+    partial class AddIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -451,9 +454,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("Products");
@@ -465,8 +465,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Advanced electric toothbrush with 3 cleaning modes",
                             Name = "Electric Toothbrush",
-                            Price = 350m,
-                            Stock = 5
+                            Price = 350m
                         },
                         new
                         {
@@ -474,8 +473,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Medical toothpaste for sensitive teeth",
                             Name = "Medical Toothpaste",
-                            Price = 80m,
-                            Stock = 10
+                            Price = 80m
                         },
                         new
                         {
@@ -483,8 +481,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Mint flavored dental floss",
                             Name = "Dental Floss",
-                            Price = 45m,
-                            Stock = 20
+                            Price = 45m
                         },
                         new
                         {
@@ -492,8 +489,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             CreatedAt = new DateOnly(2024, 1, 25),
                             Description = "Antibacterial mouthwash",
                             Name = "Mouthwash",
-                            Price = 120m,
-                            Stock = 8
+                            Price = 120m
                         });
                 });
 

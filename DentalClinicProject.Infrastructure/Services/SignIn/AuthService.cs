@@ -3,6 +3,7 @@ using DentalClinicProject.Core.DTOs;
 using DentalClinicProject.Core.DTOs.Auth;
 using DentalClinicProject.Core.Entities.AuthModel;
 using DentalClinicProject.Core.Entities.Users;
+using DentalClinicProject.Core.Enum;
 using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Core.ViewModels;
 using DentalClinicProject.Infrastructure.Data.Context;
@@ -26,8 +27,8 @@ public class AuthService : IAuthService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(UserManager<AppUser> userManager,SignInManager<AppUser> signInManager,
-        IMapper mapper,ITokenService tokenService, ApplicationDbContext context,
+    public AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager,
+        IMapper mapper, ITokenService tokenService, ApplicationDbContext context,
         IRedisService redisService, IHttpContextAccessor httpContextAccessor, ILogger<AuthService> logger,
         IMailService mailService, IPhoneService phoneService)
     {
@@ -50,7 +51,6 @@ public class AuthService : IAuthService
         {
             _logger.LogInformation("Registration attempt for email: {Email}, username: {Username}", dto.Email, dto.UserName);
 
-            // Validation checks
             if (dto == null)
             {
                 _logger.LogWarning("Registration failed: DTO is null");
@@ -69,6 +69,9 @@ public class AuthService : IAuthService
                 return Fail(400, "Password is required");
             }
 
+            if (dto.Role == Role.Doctor || dto.Role == Role.Admin || dto.Role == Role.DelivaryMan)
+                return Fail(400, "Only the admin can add you as an employee");
+
             var user = _mapper.Map<AppUser>(dto);
 
             var exists = await Helper.CheckExists(dto.Email, dto.UserName, _userManager);
@@ -78,7 +81,6 @@ public class AuthService : IAuthService
                 return Fail(400, "Email or username already exists");
             }
 
-            // Create user in database
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
             {
@@ -89,30 +91,21 @@ public class AuthService : IAuthService
             await _userManager.AddToRoleAsync(user, dto.Role.ToString());
             _logger.LogInformation("User {UserId} registered successfully with email {Email} and role {Role}", user.Id, dto.Email, dto.Role);
 
-            // Cache user in Redis by email, username, and phone (if provided)
             await _redisService.SetAsync(RedisKeys.UserByEmail(dto.Email), user.Id, TimeSpan.FromHours(24));
             await _redisService.SetAsync(RedisKeys.UserByUsername(dto.UserName), user.Id, TimeSpan.FromHours(24));
             await _redisService.SetAsync(RedisKeys.UserById(user.Id), user.Id, TimeSpan.FromHours(24));
-            
+
             if (!string.IsNullOrEmpty(dto.PhoneNumber))
-            {
                 await _redisService.SetAsync(RedisKeys.UserByPhone(dto.PhoneNumber), user.Id, TimeSpan.FromHours(24));
-            }
-            
+
             _logger.LogInformation("User {UserId} cached in Redis", user.Id);
 
-            // Always send email verification code
             await Helper.SendVerificationEmailAsync(dto.Email, _redisService, _mailService, _logger);
-            
-            // Generate temporary session token for resend operations (valid for 1 hour)
+
             var sessionToken = Helper.GenerateSecureToken();
-            var sessionKey = RedisKeys.PendingVerificationSession(sessionToken);
-            await _redisService.SetAsync(sessionKey, user.Id, TimeSpan.FromHours(1));
-            
-            // Store session token by userId for cleanup after verification
-            var userSessionKey = RedisKeys.PendingVerificationByUserId(user.Id);
-            await _redisService.SetAsync(userSessionKey, sessionToken, TimeSpan.FromHours(1));
-            
+            await _redisService.SetAsync(RedisKeys.PendingVerificationSession(sessionToken), user.Id, TimeSpan.FromHours(1));
+            await _redisService.SetAsync(RedisKeys.PendingVerificationByUserId(user.Id), sessionToken, TimeSpan.FromHours(1));
+
             return new ApiResponse<AuthResult>
             {
                 Success = true,
@@ -124,7 +117,7 @@ public class AuthService : IAuthService
                     UserId = user.Id,
                     Email = user.Email,
                     Username = user.UserName,
-                    Token = sessionToken // Temporary session token for resend
+                    Token = sessionToken
                 }
             };
         }
@@ -141,7 +134,6 @@ public class AuthService : IAuthService
         {
             _logger.LogInformation("Login attempt with identifier");
 
-            // Validation checks
             if (dto == null)
             {
                 _logger.LogWarning("Login failed: DTO is null");
@@ -160,82 +152,8 @@ public class AuthService : IAuthService
                 return Fail(400, "Password is required");
             }
 
-            // Determine identifier type and find user
-            AppUser? user = null;
-            string loginMethod = string.Empty;
             var identifier = dto.Identifier.Trim();
-            string redisKey = string.Empty;
-
-            // Check if identifier is an email
-            if (identifier.Contains("@"))
-            {
-                loginMethod = "Email";
-                redisKey = RedisKeys.UserByEmail(identifier);
-                
-                // Try Redis first
-                var cachedUserId = await _redisService.GetAsync(redisKey);
-                if (!string.IsNullOrEmpty(cachedUserId))
-                {
-                    user = await _userManager.FindByIdAsync(cachedUserId);
-                    _logger.LogInformation("User found in Redis cache by Email");
-                }
-                else
-                {
-                    // Get from database and cache
-                    user = await _userManager.FindByEmailAsync(identifier);
-                    if (user != null)
-                    {
-                        await _redisService.SetAsync(redisKey, user.Id, TimeSpan.FromHours(24));
-                        _logger.LogInformation("User cached in Redis by Email");
-                    }
-                }
-            }
-            // Check if identifier is a phone number (starts with + or contains only digits)
-            else if (identifier.StartsWith("+") || identifier.All(char.IsDigit))
-            {
-                loginMethod = "PhoneNumber";
-                redisKey = RedisKeys.UserByPhone(identifier);
-                
-                // Always get from database for phone to ensure we get the verified user
-                // Don't use Redis cache for phone login to avoid getting wrong user
-                user = await _userManager.Users
-                    .FirstOrDefaultAsync(u => u.PhoneNumber != null &&  u.PhoneNumber == identifier && u.PhoneNumberConfirmed);
-                
-                if (user != null)
-                {
-                    // Cache the verified user
-                    await _redisService.SetAsync(redisKey, user.Id, TimeSpan.FromHours(24));
-                    _logger.LogInformation("Verified user found and cached in Redis by Phone");
-                }
-                else
-                {
-                    _logger.LogWarning("No verified user found with phone number");
-                }
-            }
-            // Otherwise, treat as username
-            else
-            {
-                loginMethod = "Username";
-                redisKey = RedisKeys.UserByUsername(identifier);
-                
-                // Try Redis first
-                var cachedUserId = await _redisService.GetAsync(redisKey);
-                if (!string.IsNullOrEmpty(cachedUserId))
-                {
-                    user = await _userManager.FindByIdAsync(cachedUserId);
-                    _logger.LogInformation("User found in Redis cache by Username");
-                }
-                else
-                {
-                    // Get from database and cache
-                    user = await _userManager.FindByNameAsync(identifier);
-                    if (user != null)
-                    {
-                        await _redisService.SetAsync(redisKey, user.Id, TimeSpan.FromHours(24));
-                        _logger.LogInformation("User cached in Redis by Username");
-                    }
-                }
-            }
+            var (user, loginMethod) = await ResolveUserAsync(identifier);
 
             if (user == null)
             {
@@ -251,114 +169,47 @@ public class AuthService : IAuthService
                 _logger.LogWarning("Account is locked. Try again after {Minutes} minutes.", remainingTime?.Minutes);
                 return Fail(400, $"Your account is locked. Try again after {remainingTime?.Minutes} minutes.");
             }
+
             if (!check.Succeeded)
             {
                 _logger.LogWarning("Login failed: Invalid password for user {UserId}", user.Id);
                 return Fail(400, "Invalid credentials");
             }
 
-            // Check verification based on login method
-            _logger.LogInformation("Checking verification for user {UserId} with login method {LoginMethod}", user.Id, loginMethod);
-            _logger.LogInformation("User verification status - EmailConfirmed: {EmailConfirmed}, PhoneNumberConfirmed: {PhoneConfirmed}", 
-                user.EmailConfirmed, user.PhoneNumberConfirmed);
-            
-            if (loginMethod == "Email")
+            _logger.LogInformation("Checking verification for user {UserId} - EmailConfirmed: {EmailConfirmed}, PhoneConfirmed: {PhoneConfirmed}",
+                user.Id, user.EmailConfirmed, user.PhoneNumberConfirmed);
+
+            bool isEmployee = await IsEmployeeAsync(user);
+
+            if (loginMethod == "PhoneNumber")
             {
-                if (!user.EmailConfirmed)
+                if (!user.PhoneNumberConfirmed)
                 {
-                    _logger.LogWarning("Login failed: Email not verified for user {UserId}", user.Id);
-                    return Fail(400, "Email not verified");
+                    _logger.LogWarning("Login failed: Phone not verified for user {UserId}", user.Id);
+                    return Fail(400, "Phone not verified");
                 }
 
-                var AdminRole = await _userManager.IsInRoleAsync(user, "Admin");
-                if(AdminRole)
-                {
-                    _logger.LogInformation("Admin user {UserId} logged in successfully", user.Id);
-                    var accessToken = await _tokenService.GenerateAccessToken(user);
-                    var refreshToken = _tokenService.GenerateRefreshToken();
-                    var refreshTokenRecord = await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
-                    return new ApiResponse<AuthResult>
-                    {
-                        Success = true,
-                        StatusCode = 200,
-                        Message = "Login successful",
-                        Data = new AuthResult
-                        {
-                            Succeeded = true,
-                            UserId = user.Id,
-                            Email = user.Email,
-                            Username = user.UserName,
-                            Role = "Admin",
-                            Token = accessToken,
-                            RefreshToken = refreshToken
-                        }
-                    };
-                }
+                if (isEmployee)
+                    return await BuildEmployeeLoginResponse(user);
 
-                // Send verification code to email for 2FA
-                await Helper.SendVerificationEmailAsync(user.Email!, _redisService, _mailService, _logger);
-                _logger.LogInformation("2FA code sent to email for user {UserId}", user.Id);
-                
-                return new ApiResponse<AuthResult>
-                {
-                    Success = true,
-                    StatusCode = 200,
-                    Message = "Verification code sent to your email. Please verify to complete login.",
-                    Data = new AuthResult
-                    {
-                        Succeeded = false,
-                        UserId = user.Id,
-                        Email = user.Email,
-                        Username = user.UserName
-                    }
-                };
-            }
-            else if (loginMethod == "PhoneNumber")
-            {
-                // Send verification code to phone for 2FA (no PhoneNumberConfirmed check)
                 await Helper.SendVerificationPhoneAsync(user.PhoneNumber!, _redisService, _phoneService, _logger);
                 _logger.LogInformation("2FA code sent to phone for user {UserId}", user.Id);
-                
-                return new ApiResponse<AuthResult>
-                {
-                    Success = true,
-                    StatusCode = 200,
-                    Message = "Verification code sent to your phone. Please verify to complete login.",
-                    Data = new AuthResult
-                    {
-                        Succeeded = false,
-                        UserId = user.Id,
-                        Email = user.Email,
-                        Username = user.UserName,
-                    }
-                };
+                return Build2FAResponse(user, "Verification code sent to your phone. Please verify to complete login.");
             }
-            else // Username login
+            else // Email or Username
             {
-                // For username login, require email verification
                 if (!user.EmailConfirmed)
                 {
                     _logger.LogWarning("Login failed: Email not verified for user {UserId}", user.Id);
                     return Fail(400, "Email not verified");
                 }
-                
-                // Send verification code to email for 2FA
+
+                if (isEmployee)
+                    return await BuildEmployeeLoginResponse(user);
+
                 await Helper.SendVerificationEmailAsync(user.Email!, _redisService, _mailService, _logger);
                 _logger.LogInformation("2FA code sent to email for user {UserId}", user.Id);
-                
-                return new ApiResponse<AuthResult>
-                {
-                    Success = true,
-                    StatusCode = 200,
-                    Message = "Verification code sent to your email. Please verify to complete login.",
-                    Data = new AuthResult
-                    {
-                        Succeeded = false,
-                        UserId = user.Id,
-                        Email = user.Email,
-                        Username = user.UserName
-                    }
-                };
+                return Build2FAResponse(user, "Verification code sent to your email. Please verify to complete login.");
             }
         }
         catch (Exception ex)
@@ -379,11 +230,8 @@ public class AuthService : IAuthService
 
             var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
 
-            // Blacklist current access token
-            var blacklistKey = RedisKeys.BlacklistedAccessToken(userId, accessToken);
-            await _redisService.SetAsync(blacklistKey, "blacklisted", TimeSpan.FromMinutes(30));
+            await _redisService.SetAsync(RedisKeys.BlacklistedAccessToken(userId, accessToken), "blacklisted", TimeSpan.FromMinutes(30));
 
-            // Revoke all refresh tokens for this user on this IP
             var tokens = await _context.RefreshTokens
                 .Where(t => t.UserId == userId && !t.IsRevoked)
                 .ToListAsync();
@@ -391,9 +239,7 @@ public class AuthService : IAuthService
             foreach (var token in tokens)
             {
                 token.Revoke(ipAddress, "Logout");
-                // Remove from Redis
-                string redisKey = RedisKeys.RefreshToken(userId, token.Id.ToString());
-                await _redisService.DeleteAsync(redisKey);
+                await _redisService.DeleteAsync(RedisKeys.RefreshToken(userId, token.Id.ToString()));
             }
 
             _context.RefreshTokens.RemoveRange(tokens);
@@ -438,10 +284,8 @@ public class AuthService : IAuthService
             AppUser? user = null;
             string verificationKey = string.Empty;
 
-            // Determine if identifier is email or phone
             if (identifierTrimmed.Contains("@"))
             {
-                // Email verification
                 verificationKey = RedisKeys.EmailVerificationCode(identifierTrimmed, code);
                 var savedCode = await _redisService.GetAsync(verificationKey);
 
@@ -455,7 +299,6 @@ public class AuthService : IAuthService
             }
             else if (identifierTrimmed.StartsWith("+") || identifierTrimmed.All(char.IsDigit))
             {
-                // Phone verification
                 verificationKey = RedisKeys.PhoneVerificationCode(identifierTrimmed);
                 var savedCode = await _redisService.GetAsync(verificationKey);
 
@@ -465,13 +308,11 @@ public class AuthService : IAuthService
                     return Fail(400, "Invalid or expired verification code");
                 }
 
-                // Find user by phone - should be unique after verification
                 user = await _userManager.Users
                     .FirstOrDefaultAsync(u => u.PhoneNumber != null && u.PhoneNumber == identifierTrimmed);
             }
             else
             {
-                // Username - use email for verification
                 user = await _userManager.FindByNameAsync(identifierTrimmed);
                 if (user != null)
                 {
@@ -492,18 +333,14 @@ public class AuthService : IAuthService
                 return Fail(400, "User not found");
             }
 
-            // Delete the verification code from Redis
             await _redisService.DeleteAsync(verificationKey);
 
-            // Generate tokens
             var accessToken = await _tokenService.GenerateAccessToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
-            var refreshTokenRecord = await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+            await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
 
-            // Cache refresh token in Redis
             var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
-            string refreshKey = RedisKeys.RefreshToken(user.Id, ipAddress);
-            await _redisService.SetAsync(refreshKey, refreshToken, TimeSpan.FromDays(15));
+            await _redisService.SetAsync(RedisKeys.RefreshToken(user.Id, ipAddress), refreshToken, TimeSpan.FromDays(15));
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -550,8 +387,7 @@ public class AuthService : IAuthService
             var ipAddress = IpAddressHelper.GetClientIpAddress(_httpContextAccessor);
 
             refreshToken.Revoke(ipAddress, "Refresh");
-            string oldRedisKey = RedisKeys.RefreshToken(user.Id, refreshToken.Id.ToString());
-            await _redisService.DeleteAsync(oldRedisKey);
+            await _redisService.DeleteAsync(RedisKeys.RefreshToken(user.Id, refreshToken.Id.ToString()));
             await _context.SaveChangesAsync();
 
             var newAccessToken = await _tokenService.GenerateAccessToken(user);
@@ -564,11 +400,11 @@ public class AuthService : IAuthService
                 ExpiryDate = DateTime.UtcNow.AddDays(15),
                 CreatedByIp = ipAddress
             };
+
             await _context.RefreshTokens.AddAsync(savedRefresh);
             await _context.SaveChangesAsync();
 
-            var newRedisKey = RedisKeys.RefreshToken(user.Id, savedRefresh.Id.ToString());
-            await _redisService.SetAsync(newRedisKey, newRefreshToken, TimeSpan.FromDays(15));
+            await _redisService.SetAsync(RedisKeys.RefreshToken(user.Id, savedRefresh.Id.ToString()), newRefreshToken, TimeSpan.FromDays(15));
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -598,6 +434,121 @@ public class AuthService : IAuthService
         }
     }
 
+    #region Private Helpers
+
+    private async Task<(AppUser? user, string loginMethod)> ResolveUserAsync(string identifier)
+    {
+        AppUser? user = null;
+        string loginMethod;
+
+        if (identifier.Contains("@"))
+        {
+            loginMethod = "Email";
+            var cachedUserId = await _redisService.GetAsync(RedisKeys.UserByEmail(identifier));
+            if (!string.IsNullOrEmpty(cachedUserId))
+            {
+                user = await _userManager.FindByIdAsync(cachedUserId);
+                _logger.LogInformation("User found in Redis cache by Email");
+            }
+            else
+            {
+                user = await _userManager.FindByEmailAsync(identifier);
+                if (user != null)
+                {
+                    await _redisService.SetAsync(RedisKeys.UserByEmail(identifier), user.Id, TimeSpan.FromHours(24));
+                    _logger.LogInformation("User cached in Redis by Email");
+                }
+            }
+        }
+        else if (identifier.StartsWith("+") || identifier.All(char.IsDigit))
+        {
+            loginMethod = "PhoneNumber";
+            user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.PhoneNumber != null && u.PhoneNumber == identifier && u.PhoneNumberConfirmed);
+
+            if (user != null)
+            {
+                await _redisService.SetAsync(RedisKeys.UserByPhone(identifier), user.Id, TimeSpan.FromHours(24));
+                _logger.LogInformation("Verified user found and cached in Redis by Phone");
+            }
+            else
+            {
+                _logger.LogWarning("No verified user found with phone number");
+            }
+        }
+        else
+        {
+            loginMethod = "Username";
+            var cachedUserId = await _redisService.GetAsync(RedisKeys.UserByUsername(identifier));
+            if (!string.IsNullOrEmpty(cachedUserId))
+            {
+                user = await _userManager.FindByIdAsync(cachedUserId);
+                _logger.LogInformation("User found in Redis cache by Username");
+            }
+            else
+            {
+                user = await _userManager.FindByNameAsync(identifier);
+                if (user != null)
+                {
+                    await _redisService.SetAsync(RedisKeys.UserByUsername(identifier), user.Id, TimeSpan.FromHours(24));
+                    _logger.LogInformation("User cached in Redis by Username");
+                }
+            }
+        }
+
+        return (user, loginMethod);
+    }
+
+    private async Task<bool> IsEmployeeAsync(AppUser user)
+    {
+        return await _userManager.IsInRoleAsync(user, "Admin")
+            || await _userManager.IsInRoleAsync(user, "Doctor")
+            || await _userManager.IsInRoleAsync(user, "DelivaryMan");
+    }
+
+    private async Task<ApiResponse<AuthResult>> BuildEmployeeLoginResponse(AppUser user)
+    {
+        var accessToken = await _tokenService.GenerateAccessToken(user);
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+        var roles = await _userManager.GetRolesAsync(user);
+
+        _logger.LogInformation("Employee {UserId} logged in successfully", user.Id);
+
+        return new ApiResponse<AuthResult>
+        {
+            Success = true,
+            StatusCode = 200,
+            Message = "Login successful",
+            Data = new AuthResult
+            {
+                Succeeded = true,
+                UserId = user.Id,
+                Email = user.Email,
+                Username = user.UserName,
+                Role = roles.FirstOrDefault(),
+                Token = accessToken,
+                RefreshToken = refreshToken
+            }
+        };
+    }
+
+    private ApiResponse<AuthResult> Build2FAResponse(AppUser user, string message)
+    {
+        return new ApiResponse<AuthResult>
+        {
+            Success = true,
+            StatusCode = 200,
+            Message = message,
+            Data = new AuthResult
+            {
+                Succeeded = false,
+                UserId = user.Id,
+                Email = user.Email,
+                Username = user.UserName
+            }
+        };
+    }
 
     private ApiResponse<AuthResult> Fail(int code, string message, IEnumerable<string>? errors = null)
     {
@@ -606,7 +557,9 @@ public class AuthService : IAuthService
             Success = false,
             StatusCode = code,
             Message = message,
-            Errors = errors ?? Enumerable.Empty<string>() 
+            Errors = errors ?? Enumerable.Empty<string>()
         };
     }
+
+    #endregion
 }

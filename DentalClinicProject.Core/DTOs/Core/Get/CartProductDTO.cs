@@ -15,6 +15,7 @@ namespace DentalClinicProject.Core.DTOs.Core.Get
 
     public record CartDTO
     {
+        public int Id { get; set; }
         public List<CartProductDTO> Items { get; set; } = new();
 
         public decimal TotalPrice { get; set; }

@@ -17,7 +17,8 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                     Name = SeedData.Product1Name,
                     Description = SeedData.Product1Description,
                     Price = SeedData.Product1Price,
-                    CreatedAt = new(2024, 1, 25)
+                    CreatedAt = new(2024, 1, 25),
+                    Stock = 5
                 },
 
                 new Product
@@ -26,7 +27,8 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                     Name = SeedData.Product2Name,
                     Description = SeedData.Product2Description,
                     Price = SeedData.Product2Price,
-                    CreatedAt = new(2024, 1, 25)
+                    CreatedAt = new(2024, 1, 25),
+                    Stock = 10
                 },
 
                 new Product
@@ -35,7 +37,8 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                     Name = SeedData.Product3Name,
                     Description = SeedData.Product3Description,
                     Price = SeedData.Product3Price,
-                    CreatedAt = new(2024, 1, 25)
+                    CreatedAt = new(2024, 1, 25),
+                    Stock = 20
                 },
 
                 new Product
@@ -44,9 +47,9 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.CoreConfig
                     Name = SeedData.Product4Name,
                     Description = SeedData.Product4Description,
                     Price = SeedData.Product4Price,
-                    CreatedAt = new(2024, 1, 25)
+                    CreatedAt = new(2024, 1, 25),
+                    Stock = 8
                 }
-
             );
         }
     }

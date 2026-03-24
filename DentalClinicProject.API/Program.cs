@@ -1,6 +1,7 @@
 using DentalClinicProject.API.Mapping;
 using DentalClinicProject.API.Middleware;
 using DentalClinicProject.Core.Interfaces.IServices;
+using DentalClinicProject.Core.Seeding;
 using DentalClinicProject.Infrastructure;
 using DentalClinicProject.Infrastructure.Mapping;
 using DentalClinicProject.Infrastructure.Services;
@@ -45,6 +46,8 @@ namespace DentalClinicProject.API
                 op.AddProfile<ProductMapping>();
                 op.AddProfile<RateMapping>();
                 op.AddProfile<ProfileMapping>();
+                op.AddProfile<OrderMapping>();
+                op.AddProfile<PaymentMapping>();
             });
 
             // Redis
@@ -171,6 +174,13 @@ namespace DentalClinicProject.API
             builder.Services.AddSingleton<HtmlSanitizer>();
 
             var app = builder.Build();
+            using (var scope = app.Services.CreateScope())
+            {
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+                await RoleSeeder.SeedAsync(roleManager);
+            }
+
 
             app.UseForwardedHeaders();
 

@@ -108,6 +108,38 @@ namespace DentalClinicProject.Infrastructure.Data.Confirguration.UserConfig
                     ConcurrencyStamp = SeedData.RegularConcurrencyStamp,
                     ProviderId = SeedData.RegularProviderId,
                     EmailConfirmed = true
+                },
+
+                new AppUser
+                {
+                    Id= SeedData.Delivery1UserId,
+                    UserName = SeedData.Delivery1UserName,
+                    NormalizedUserName = SeedData.Delivery1NormalizedUserName,
+                    Email = SeedData.Delivery1Email,
+                    NormalizedEmail = SeedData.Delivery1NormalizedEmail,
+                    FirstName = SeedData.Delivery1FirstName,
+                    LastName = SeedData.Delivery1LastName,
+                    PasswordHash = SeedData.Delivery1PasswordHash,
+                    SecurityStamp = SeedData.Delivery1SecurityStamp,
+                    ConcurrencyStamp = SeedData.Delivery1ConcurrencyStamp,
+                    ProviderId = SeedData.Delivery1ProviderId,
+                    EmailConfirmed = true
+                },
+
+                new AppUser
+                {
+                    Id= SeedData.Delivery2UserId,
+                    UserName = SeedData.Delivery2UserName,
+                    NormalizedUserName = SeedData.Delivery2NormalizedUserName,
+                    Email = SeedData.Delivery2Email,
+                    NormalizedEmail = SeedData.Delivery2NormalizedEmail,
+                    FirstName = SeedData.Delivery2FirstName,
+                    LastName = SeedData.Delivery2LastName,
+                    PasswordHash = SeedData.Delivery2PasswordHash,
+                    SecurityStamp = SeedData.Delivery2SecurityStamp,
+                    ConcurrencyStamp = SeedData.Delivery2ConcurrencyStamp,
+                    ProviderId = SeedData.Delivery2ProviderId,
+                    EmailConfirmed = true
                 }
             );
         }

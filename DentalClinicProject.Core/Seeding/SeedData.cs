@@ -11,18 +11,20 @@ namespace DentalClinicProject.Core.Seeding
         public const string DoctorRole = "Doctor";
         public const string PatientRole = "Patient";
         public const string UserRole = "User";
+        public const string DeliveryRole = "Delivery";
 
         // Normalized Roles
         public const string AdminNormalizedRole = "ADMIN";
         public const string DoctorNormalizedRole = "DOCTOR";
         public const string PatientNormalizedRole = "PATIENT";
         public const string UserNormalizedRole = "USER";
+        public const string DeliveryNormalizedRole = "DELIVERY";
 
         // ========================
         // Admin User Data
         // ========================
         public const string AdminUserId = "admin-1";
-        public const string AdminUserName = "admin@dentalclinic.com";
+        public const string AdminUserName = "adminUsername";
         public const string AdminNormalizedUserName = "ADMIN@DENTALCLINIC.COM";
         public const string AdminEmail = "admin@dentalclinic.com";
         public const string AdminNormalizedEmail = "ADMIN@DENTALCLINIC.COM";
@@ -38,7 +40,7 @@ namespace DentalClinicProject.Core.Seeding
         // Doctor 1 User Data
         // ========================
         public const string Doctor1UserId = "doctor-1";
-        public const string Doctor1UserName = "doctor1@dentalclinic.com";
+        public const string Doctor1UserName = "doctorUsername1";
         public const string Doctor1NormalizedUserName = "DOCTOR1@DENTALCLINIC.COM";
         public const string Doctor1Email = "doctor1@dentalclinic.com";
         public const string Doctor1NormalizedEmail = "DOCTOR1@DENTALCLINIC.COM";
@@ -54,7 +56,7 @@ namespace DentalClinicProject.Core.Seeding
         // Doctor 2 User Data
         // ========================
         public const string Doctor2UserId = "doctor-2";
-        public const string Doctor2UserName = "doctor2@dentalclinic.com";
+        public const string Doctor2UserName = "doctorUsername2";
         public const string Doctor2NormalizedUserName = "DOCTOR2@DENTALCLINIC.COM";
         public const string Doctor2Email = "doctor2@dentalclinic.com";
         public const string Doctor2NormalizedEmail = "DOCTOR2@DENTALCLINIC.COM";
@@ -65,6 +67,38 @@ namespace DentalClinicProject.Core.Seeding
         public const string Doctor2ProviderId = "c3d4e5f6-a7b8-9012-cdef-123456789012";
         public const string Doctor2SecurityStamp = "RE9DVE9SMlNFQ1VSSVRZU1RBTVA="; // Base64 of "DOCTOR2SECURITYSTAMP"
         public const string Doctor2ConcurrencyStamp = "DOCTOR2-CONCURRENCY-001";
+
+        // ========================
+        // Delivery 1 User Data
+        // ========================
+        public const string Delivery1UserId = "delivery-1";
+        public const string Delivery1UserName = "deliveryUsername1";
+        public const string Delivery1NormalizedUserName = "DELIVERYUSERNAME1";
+        public const string Delivery1Email = "delivery@dentalclinic.com";
+        public const string Delivery1NormalizedEmail = "DEKIVERY1@DENTALCLINIC.COM";
+        public const string Delivery1FirstName = "Ahmed";
+        public const string Delivery1LastName = "Elsayed";
+        public const string Delivery1Password = "User@123";
+        public const string Delivery1PasswordHash = "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==";
+        public const string Delivery1ProviderId = "b2c3d4e5-f6a7-8901-qwer-f12345678901";
+        public const string Delivery1SecurityStamp = "RE9DVE9SMVNFQ1VSSVRZU1RBTVA="; // Base64 of "DOCTOR1SECURITYSTAMP"
+        public const string Delivery1ConcurrencyStamp = "DELIVERY1-CONCURRENCY-001";
+
+        // ========================
+        // Delivery 2 User Data
+        // ========================
+        public const string Delivery2UserId = "delivery-2";
+        public const string Delivery2UserName = "deliveryUsername2";
+        public const string Delivery2NormalizedUserName = "DELIVERYUSERNAME2";
+        public const string Delivery2Email = "delivery2@dentalclinic.com";
+        public const string Delivery2NormalizedEmail = "DELIVERY2@DENTALCLINIC.COM";
+        public const string Delivery2FirstName = "Mahmoud";
+        public const string Delivery2LastName = "Hassan";
+        public const string Delivery2Password = "User@123";
+        public const string Delivery2PasswordHash = "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==";
+        public const string Delivery2ProviderId = "c3d4e5f6-a7b8-9012-asdf-123456789012";
+        public const string Delivery2SecurityStamp = "RE9DVE9SMlNFQ1VSSVRZU1RBTVA="; // Base64 of "DOCTOR2SECURITYSTAMP"
+        public const string Delivery2ConcurrencyStamp = "DELIVERY2-CONCURRENCY-001";
 
         // ========================
         // Patient 1 User Data

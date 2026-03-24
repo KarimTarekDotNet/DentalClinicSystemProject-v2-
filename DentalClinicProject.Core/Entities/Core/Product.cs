@@ -6,5 +6,6 @@
         public string Description { get; set; } = null!;
         public decimal Price { get; set; }
         public List<CartItem> CartItems { get; set; } = new();
+        public int Stock { get; set; }
     }
 }

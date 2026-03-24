@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalClinicProject.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260319134636_Initial")]
-    partial class Initial
+    [Migration("20260321191943_AddDateInDelivery")]
+    partial class AddDateInDelivery
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -203,7 +203,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 1,
                             CartId = 1,
-                            CreatedAt = new DateOnly(2026, 3, 19),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 1,
                             Quantity = 1,
                             UnitPrice = 350m
@@ -212,7 +212,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 2,
                             CartId = 1,
-                            CreatedAt = new DateOnly(2026, 3, 19),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 2,
                             Quantity = 1,
                             UnitPrice = 80m
@@ -221,7 +221,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 3,
                             CartId = 2,
-                            CreatedAt = new DateOnly(2026, 3, 19),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 3,
                             Quantity = 1,
                             UnitPrice = 45m
@@ -230,7 +230,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         {
                             Id = 4,
                             CartId = 2,
-                            CreatedAt = new DateOnly(2026, 3, 19),
+                            CreatedAt = new DateOnly(2026, 3, 21),
                             ProductId = 4,
                             Quantity = 1,
                             UnitPrice = 120m
@@ -245,6 +245,9 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("DeliveryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -254,6 +257,8 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId");
 
                     b.HasIndex("UserId");
 
@@ -713,7 +718,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             ProviderId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                             SecurityStamp = "QURNSU5TRUNVUklUWVNUQU1QMDA=",
                             TwoFactorEnabled = false,
-                            UserName = "admin@dentalclinic.com"
+                            UserName = "adminUsername"
                         },
                         new
                         {
@@ -733,7 +738,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             ProviderId = "b2c3d4e5-f6a7-8901-bcde-f12345678901",
                             SecurityStamp = "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=",
                             TwoFactorEnabled = false,
-                            UserName = "doctor1@dentalclinic.com"
+                            UserName = "doctorUsername1"
                         },
                         new
                         {
@@ -753,7 +758,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             ProviderId = "c3d4e5f6-a7b8-9012-cdef-123456789012",
                             SecurityStamp = "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=",
                             TwoFactorEnabled = false,
-                            UserName = "doctor2@dentalclinic.com"
+                            UserName = "doctorUsername2"
                         },
                         new
                         {
@@ -814,6 +819,107 @@ namespace DentalClinicProject.Infrastructure.Migrations
                             SecurityStamp = "VVNFUlNFQ1VSSVRZU1RBTVA=",
                             TwoFactorEnabled = false,
                             UserName = "user@example.com"
+                        },
+                        new
+                        {
+                            Id = "delivery-1",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "DELIVERY1-CONCURRENCY-001",
+                            Email = "delivery@dentalclinic.com",
+                            EmailConfirmed = true,
+                            FirstName = "Ahmed",
+                            LastName = "Elsayed",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "DEKIVERY1@DENTALCLINIC.COM",
+                            NormalizedUserName = "DELIVERYUSERNAME1",
+                            PasswordHash = "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==",
+                            PhoneNumberConfirmed = false,
+                            Provider = "Local",
+                            ProviderId = "b2c3d4e5-f6a7-8901-qwer-f12345678901",
+                            SecurityStamp = "RE9DVE9SMVNFQ1VSSVRZU1RBTVA=",
+                            TwoFactorEnabled = false,
+                            UserName = "deliveryUsername1"
+                        },
+                        new
+                        {
+                            Id = "delivery-2",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "DELIVERY2-CONCURRENCY-001",
+                            Email = "delivery2@dentalclinic.com",
+                            EmailConfirmed = true,
+                            FirstName = "Mahmoud",
+                            LastName = "Hassan",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "DELIVERY2@DENTALCLINIC.COM",
+                            NormalizedUserName = "DELIVERYUSERNAME2",
+                            PasswordHash = "AQAAAAIAAYagAAAAEDXDYwydBslF+l+wymoQRV0AhyxRvN5QbAWsAjeGBTb/wHqEv8TlM7PT3h08apHLdQ==",
+                            PhoneNumberConfirmed = false,
+                            Provider = "Local",
+                            ProviderId = "c3d4e5f6-a7b8-9012-asdf-123456789012",
+                            SecurityStamp = "RE9DVE9SMlNFQ1VSSVRZU1RBTVA=",
+                            TwoFactorEnabled = false,
+                            UserName = "deliveryUsername2"
+                        });
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Users.Delivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AppUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("CapactiyOfDay")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("CreatedAt")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("DeliveryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReasonForRejection")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Salary")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.ToTable("Deliveries");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AppUserId = "delivery-1",
+                            CapactiyOfDay = 10,
+                            CreatedAt = new DateOnly(2024, 1, 5),
+                            DeliveryDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsApproved = true,
+                            Salary = 15000m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AppUserId = "delivery-2",
+                            CapactiyOfDay = 8,
+                            CreatedAt = new DateOnly(2024, 1, 10),
+                            DeliveryDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsApproved = false,
+                            ReasonForRejection = "He did not submit the required documents.",
+                            Salary = 0.0m
                         });
                 });
 
@@ -943,36 +1049,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "role-admin",
-                            ConcurrencyStamp = "ROLE-ADMIN-001",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = "role-doctor",
-                            ConcurrencyStamp = "ROLE-DOCTOR-001",
-                            Name = "Doctor",
-                            NormalizedName = "DOCTOR"
-                        },
-                        new
-                        {
-                            Id = "role-patient",
-                            ConcurrencyStamp = "ROLE-PATIENT-001",
-                            Name = "Patient",
-                            NormalizedName = "PATIENT"
-                        },
-                        new
-                        {
-                            Id = "role-user",
-                            ConcurrencyStamp = "ROLE-USER-001",
-                            Name = "User",
-                            NormalizedName = "USER"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1060,13 +1136,6 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = "admin-1",
-                            RoleId = "role-admin"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -1177,8 +1246,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.HasOne("DentalClinicProject.Core.Entities.Users.Doctor", "Doctor")
                         .WithMany("Appointments")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DentalClinicProject.Core.Entities.Users.Patient", "Patient")
                         .WithMany()
@@ -1230,6 +1298,10 @@ namespace DentalClinicProject.Infrastructure.Migrations
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Order", b =>
                 {
+                    b.HasOne("DentalClinicProject.Core.Entities.Users.Delivery", null)
+                        .WithMany("Orders")
+                        .HasForeignKey("DeliveryId");
+
                     b.HasOne("DentalClinicProject.Core.Entities.Users.AppUser", "AppUser")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1274,6 +1346,17 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.HasOne("DentalClinicProject.Core.Entities.Users.AppUser", "AppUser")
                         .WithOne()
                         .HasForeignKey("DentalClinicProject.Core.Entities.Users.Admin", "AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Users.Delivery", b =>
+                {
+                    b.HasOne("DentalClinicProject.Core.Entities.Users.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1376,8 +1459,7 @@ namespace DentalClinicProject.Infrastructure.Migrations
                     b.HasOne("DentalClinicProject.Core.Entities.Users.Doctor", "Doctor")
                         .WithMany()
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Doctor");
                 });
@@ -1408,6 +1490,11 @@ namespace DentalClinicProject.Infrastructure.Migrations
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Core.Product", b =>
                 {
                     b.Navigation("CartItems");
+                });
+
+            modelBuilder.Entity("DentalClinicProject.Core.Entities.Users.Delivery", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("DentalClinicProject.Core.Entities.Users.Doctor", b =>
