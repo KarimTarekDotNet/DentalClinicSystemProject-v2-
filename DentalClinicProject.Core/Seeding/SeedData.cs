@@ -249,7 +249,7 @@ namespace DentalClinicProject.Core.Seeding
         public const OrderStatus Order1Status = OrderStatus.Completed;
 
         public const int Order2Id = 2;
-        public const OrderStatus Order2Status = OrderStatus.Pending;
+        public const OrderStatus Order2Status = OrderStatus.Processing;
 
         // ========================
         // OrderItems Data

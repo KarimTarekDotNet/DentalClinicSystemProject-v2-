@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace DentalClinicProject.API.Controllers.Core
 {
-    [Authorize]
+    //[Authorize]
     public class OrderController : BaseController
     {
         public OrderController(IUnitOfWork work) : base(work) { }
@@ -23,7 +23,7 @@ namespace DentalClinicProject.API.Controllers.Core
             StatusCode(statusCode, new { success = false, message });
 
         [HttpGet("get-with-delivery-id")]
-        [Authorize(Roles = "Admin,DelivaryMan")]
+        //[Authorize(Roles = "Admin,DelivaryMan")]
         public async Task<IActionResult> GetOrdersForDelivery(int deliveryId, DateTime deliveryDate)
         {
             try
@@ -41,7 +41,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpGet("get-by-id")]
-        [Authorize(Roles = "Admin,User,Patient,Doctor,DelivaryMan")]
+        //[Authorize(Roles = "Admin,User,Patient,Doctor,DelivaryMan")]
         public async Task<IActionResult> GetOrderById(int orderId)
         {
             try
@@ -51,52 +51,6 @@ namespace DentalClinicProject.API.Controllers.Core
                     return ErrorResponse("Order not found.", 404);
 
                 return OkResponse(order);
-            }
-            catch (Exception ex)
-            {
-                return ErrorResponse(ex.Message, 500);
-            }
-        }
-
-        [HttpPost("create")]
-        [Authorize(Roles = "User,Patient")]
-        public async Task<IActionResult> CreateOrder(CreateOrderDTO dto)
-        {
-            try
-            {
-                var userId = GetCurrentUid();
-                var order = await work.OrderRepository.CreateOrderAsync(dto, userId);
-                return OkResponse(order, "Order created successfully.");
-            }
-            catch (Exception ex)
-            {
-                return ErrorResponse(ex.Message, 500);
-            }
-        }
-
-        [HttpPost("add-payment")]
-        [Authorize(Roles = "User,Patient")]
-        public async Task<IActionResult> AddPayment(int orderId, AddPaymentDTO paymentDto)
-        {
-            try
-            {
-                await work.OrderRepository.AddPaymentAsync(orderId, paymentDto);
-                return OkResponse(null, "Payment added successfully.");
-            }
-            catch (Exception ex)
-            {
-                return ErrorResponse(ex.Message, 500);
-            }
-        }
-
-        [HttpPut("update-status")]
-        [Authorize(Roles = "Admin,DelivaryMan")]
-        public async Task<IActionResult> UpdateOrderStatus(int orderId, OrderStatus status)
-        {
-            try
-            {
-                await work.OrderRepository.UpdateOrderStatusAsync(orderId, status);
-                return OkResponse(null, "Order status updated successfully.");
             }
             catch (Exception ex)
             {
@@ -116,6 +70,22 @@ namespace DentalClinicProject.API.Controllers.Core
                     return ErrorResponse("No orders found for the current user.", 404);
 
                 return OkResponse(orders);
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPost("create")]
+        //[Authorize(Roles = "User,Patient")]
+        public async Task<IActionResult> CreateOrder(List<CreateOrderItemDTO> Items)
+        {
+            try
+            {
+                //var userId = GetCurrentUid();
+                var order = await work.OrderRepository.CreateOrderAsync(Items, "user-1");
+                return OkResponse(order, "Order created successfully.");
             }
             catch (Exception ex)
             {
@@ -155,7 +125,7 @@ namespace DentalClinicProject.API.Controllers.Core
 
         [HttpPost("checkout-cart")]
         [Authorize(Roles = "User,Patient")]
-        public async Task<IActionResult> CheckoutCart(int cartId, int deliveryId, DateTime deliveryDate)
+        public async Task<IActionResult> CheckoutCart()
         {
             try
             {
@@ -164,22 +134,107 @@ namespace DentalClinicProject.API.Controllers.Core
                 if (cart == null || !cart.Items.Any())
                     return ErrorResponse("Cart is empty.", 404);
 
-                var createOrderDto = new CreateOrderDTO
+                List<CreateOrderItemDTO> createOrderItemDtos = cart.Items.Select(i => new CreateOrderItemDTO
                 {
-                    DeliveryId = deliveryId,
-                    DeliveryDate = deliveryDate,
-                    Items = cart.Items.Select(i => new CreateOrderItemDTO
-                    {
-                        ProductId = i.ProductId,
-                        Quantity = i.Quantity
-                    }).ToList()
-                };
+                    ProductId = i.ProductId,
+                    Quantity = i.Quantity
+                }).ToList();
 
-                var order = await work.OrderRepository.CreateOrderAsync(createOrderDto, userId);
+                var order = await work.OrderRepository.CreateOrderAsync(createOrderItemDtos, userId);
 
                 await work.CartRepository.ClearCartAsync(cart.Id, userId, Role.User);
 
                 return OkResponse(order, "Order created successfully from cart.");
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPut("mark-shipped")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkOrderAsShipped(int orderId)
+        {
+            try
+            {
+                await work.OrderRepository.MarkOrderAsShippedAsync(orderId);
+                return OkResponse(null, "Order marked as shipped successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPut("mark-out-for-delivery")]
+        //[Authorize(Roles = "Admin,DelivaryMan")]
+        public async Task<IActionResult> MarkOrderAsOutForDelivery(int orderId)
+        {
+            try
+            {
+                await work.OrderRepository.MarkOrderAsOutForDeliveryAsync(orderId);
+                return OkResponse(null, "Order marked as out for delivery successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPut("complete")]
+        //[Authorize(Roles = "Admin,DelivaryMan")]
+        public async Task<IActionResult> CompleteOrder(int orderId)
+        {
+            try
+            {
+                await work.OrderRepository.CompleteOrderAsync(orderId);
+                return OkResponse(null, "Order completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPost("add-payment")]
+        //[Authorize(Roles = "User,Patient")]
+        public async Task<IActionResult> AddPayment(int orderId, AddPaymentDTO paymentDto)
+        {
+            try
+            {
+                await work.OrderRepository.AddPaymentAsync(orderId, paymentDto);
+                return OkResponse(null, "Payment added successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPost("cash-payment-delivery")]
+        [Authorize(Roles = "DelivaryMan,Admin")]
+        public async Task<IActionResult> CashPaymentForDelivery(int orderId)
+        {
+            try
+            {
+                await work.OrderRepository.AddPaymentAsync(orderId, null, true);
+                return OkResponse(null, "Cash payment completed successfully with delivery.");
+            }
+            catch (Exception ex)
+            {
+                return ErrorResponse(ex.Message, 500);
+            }
+        }
+
+        [HttpPut("confirm-payment")]
+        //[Authorize(Roles = "Admin,DelivaryMan")]
+        public async Task<IActionResult> ConfirmPayment(int paymentId)
+        {
+            try
+            {
+                await work.OrderRepository.ConfirmPaymentAsync(paymentId);
+                return OkResponse(null, "Payment confirmed successfully.");
             }
             catch (Exception ex)
             {

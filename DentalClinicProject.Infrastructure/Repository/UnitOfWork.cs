@@ -27,7 +27,7 @@ namespace DentalClinicProject.Infrastructure.Repository
             ILogger<PhoneVerificationService> phoneLogger, ILogger<RedisService> redisLogger, ILogger<TokenService> tokenLogger,
             ILogger<ExternalLoginService> externalLoginLogger, IAppLogger<AppointmentRepository> AppLogger,
             IAppLogger<CartRepository> CartLogger, IAppLogger<ProductRepository> ProductLogger, IAppLogger<ServiceRepository> ServiceLogger,
-            IAppLogger<RateRepository> RateLogger)
+            IAppLogger<RateRepository> RateLogger, IAppLogger<OrderRepository> OrderLogger)
         {
             _context = context;
             _userManager = userManager;
@@ -48,7 +48,7 @@ namespace DentalClinicProject.Infrastructure.Repository
             RateRepository = new RateRepository(context, mapper, RateLogger);
             AdminManager = new AdminRepository(userManager, mapper);
             ProfileRepository = new ProfileRepository(userManager, mapper, phoneService, RedisService, authLogger);
-            OrderRepository = new OrderRepository(context, mapper);
+            OrderRepository = new OrderRepository(context, mapper, OrderLogger);
         }
 
         // Repositories with lazy initialization

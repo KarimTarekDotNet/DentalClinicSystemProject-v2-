@@ -8,11 +8,14 @@ namespace DentalClinicProject.Core.Interfaces.IRepository
     {
         Task<List<OrderDTO>> GetOrdersForDeliveryAsync(int deliveryId, DateTime deliveryDate);
         Task<OrderDTO?> GetOrderByIdAsync(int orderId);
-        Task UpdateOrderStatusAsync(int orderId, OrderStatus status);
-        Task AddPaymentAsync(int orderId, AddPaymentDTO paymentDto);
-        Task<OrderDTO> CreateOrderAsync(CreateOrderDTO dto, string userId);
+        Task<List<OrderDTO>> GetOrdersByUserAsync(string userId);
+        Task<OrderDTO> CreateOrderAsync(List<CreateOrderItemDTO> Items, string userId);
         Task CancelOrderAsync(int orderId);
-        Task<List<OrderDTO>> GetOrdersByUserAsync(string userId); 
         Task UpdateOrderItemsAsync(int orderId, List<CreateOrderItemDTO> newItems);
+        Task AddPaymentAsync(int orderId, AddPaymentDTO? paymentDto = null, bool isCashOnDelivery = false);
+        Task MarkOrderAsShippedAsync(int orderId);
+        Task MarkOrderAsOutForDeliveryAsync(int orderId);
+        Task CompleteOrderAsync(int orderId);
+        Task ConfirmPaymentAsync(int paymentId);
     }
 }

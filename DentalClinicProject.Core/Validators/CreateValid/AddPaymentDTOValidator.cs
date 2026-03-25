@@ -18,11 +18,6 @@ namespace DentalClinicProject.Core.Validators.CreateValid
                 .Matches("^[A-Z]{3}$")
                 .WithMessage("Currency must be a valid ISO code (e.g. USD, EUR).");
 
-            RuleFor(x => x.Description)
-                .MaximumLength(250)
-                .Must(d => string.IsNullOrWhiteSpace(d) || d.Trim().Length > 0)
-                .WithMessage("Description cannot be whitespace.");
-
             RuleFor(x => x.CustomerId)
                 .NotEmpty()
                 .Must(id => !string.IsNullOrWhiteSpace(id))
