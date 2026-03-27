@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace DentalClinicProject.API.Controllers.Core
 {
-    //[Authorize]
+    [Authorize]
     public class OrderController : BaseController
     {
         public OrderController(IUnitOfWork work) : base(work) { }
@@ -23,7 +23,7 @@ namespace DentalClinicProject.API.Controllers.Core
             StatusCode(statusCode, new { success = false, message });
 
         [HttpGet("get-with-delivery-id")]
-        //[Authorize(Roles = "Admin,DelivaryMan")]
+        [Authorize(Roles = "Admin,DelivaryMan")]
         public async Task<IActionResult> GetOrdersForDelivery(int deliveryId, DateTime deliveryDate)
         {
             try
@@ -41,7 +41,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpGet("get-by-id")]
-        //[Authorize(Roles = "Admin,User,Patient,Doctor,DelivaryMan")]
+        [Authorize(Roles = "Admin,User,Patient,Doctor,DelivaryMan")]
         public async Task<IActionResult> GetOrderById(int orderId)
         {
             try
@@ -78,13 +78,13 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpPost("create")]
-        //[Authorize(Roles = "User,Patient")]
+        [Authorize(Roles = "User,Patient")]
         public async Task<IActionResult> CreateOrder(List<CreateOrderItemDTO> Items)
         {
             try
             {
-                //var userId = GetCurrentUid();
-                var order = await work.OrderRepository.CreateOrderAsync(Items, "user-1");
+                var userId = GetCurrentUid();
+                var order = await work.OrderRepository.CreateOrderAsync(Items, userId);
                 return OkResponse(order, "Order created successfully.");
             }
             catch (Exception ex)
@@ -153,7 +153,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpPut("mark-shipped")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> MarkOrderAsShipped(int orderId)
         {
             try
@@ -168,7 +168,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpPut("mark-out-for-delivery")]
-        //[Authorize(Roles = "Admin,DelivaryMan")]
+        [Authorize(Roles = "Admin,DelivaryMan")]
         public async Task<IActionResult> MarkOrderAsOutForDelivery(int orderId)
         {
             try
@@ -183,7 +183,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpPut("complete")]
-        //[Authorize(Roles = "Admin,DelivaryMan")]
+        [Authorize(Roles = "Admin,DelivaryMan")]
         public async Task<IActionResult> CompleteOrder(int orderId)
         {
             try
@@ -198,7 +198,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpPost("add-payment")]
-        //[Authorize(Roles = "User,Patient")]
+        [Authorize(Roles = "User,Patient")]
         public async Task<IActionResult> AddPayment(int orderId, AddPaymentDTO paymentDto)
         {
             try
@@ -228,7 +228,7 @@ namespace DentalClinicProject.API.Controllers.Core
         }
 
         [HttpPut("confirm-payment")]
-        //[Authorize(Roles = "Admin,DelivaryMan")]
+        [Authorize(Roles = "Admin,DelivaryMan")]
         public async Task<IActionResult> ConfirmPayment(int paymentId)
         {
             try

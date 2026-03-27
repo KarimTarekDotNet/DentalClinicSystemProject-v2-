@@ -1,6 +1,7 @@
 ﻿using DentalClinicProject.Core.Entities.Users;
 using DentalClinicProject.Core.Interfaces.IServices;
 using DentalClinicProject.Core.ViewModels;
+using DentalClinicProject.Infrastructure.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -100,7 +101,7 @@ namespace DentalClinicProject.Infrastructure.Services.SignIn
                     return false;
                 }
 
-                var rateLimitKey = $"User:{user.PhoneNumber}";
+                var rateLimitKey = RedisKeys.RateLimitPhone(user.PhoneNumber);
                 var last = await _redisService.GetAsync(rateLimitKey);
 
                 if (!string.IsNullOrEmpty(last))
