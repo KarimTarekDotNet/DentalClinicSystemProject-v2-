@@ -58,7 +58,7 @@ namespace DentalClinicProject.API
             {
                 options.AddPolicy("Cors", policy =>
                 {
-                    policy.WithOrigins("https://localhost:7114") 
+                    policy.WithOrigins("https://localhost:7114")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
